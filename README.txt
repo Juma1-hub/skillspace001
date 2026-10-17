@@ -1,10 +1,17 @@
-SKILLSPACE frontend update
+SKILLSPACE frontend repair package
 
-Replace the existing SKILLSPACE/index.html in your GitHub repository with this index.html, then commit and wait for Vercel deployment.
+Included:
+- Login and signup screens with email and password fields.
+- Task details page with task instructions, requirements, budget and deadline.
+- A $5 test writing task.
+- Project submission form with supported-file checks.
+- Minor markup and file-extension validation corrections.
 
-Changes:
-- View Details now opens a dedicated task page with instructions, requirements, budget, deadline, and file submission form.
-- Includes a clear $5 test writing task.
-- Login includes email and password fields.
-- Signup includes password so demo login can check both email and password.
-- Demo submissions save submission metadata in browser localStorage only. The actual file is NOT uploaded to a server. This is not production authentication; passwords are stored in browser localStorage and should never be real passwords.
+Install:
+1. In GitHub, open the SKILLSPACE folder used by your Vercel deployment.
+2. Replace its index.html with this index.html.
+3. Commit the change and wait for Vercel to finish deploying.
+4. Open the deployed website and hard-refresh it.
+
+IMPORTANT LIMITATIONS:
+This is a frontend demonstration, not a production-ready platform. Demo user data and submission metadata are stored in the browser's localStorage. Passwords are not securely stored, and selected files are not uploaded to a server. Do not use real passwords or sensitive information. Real authentication, database storage, and file uploads require a backend and secure storage service. Earnings and withdrawals are previews only; no money is moved.
