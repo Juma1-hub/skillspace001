@@ -1,7 +1,10 @@
-SKILLSPACE frontend demo update
+SKILLSPACE frontend update
 
-This package fixes the login form by adding a password field and includes demo task details with task-specific instructions and a project submission form.
+Replace the existing SKILLSPACE/index.html in your GitHub repository with this index.html, then commit and wait for Vercel deployment.
 
-Deploy the contents of this ZIP into the existing SKILLSPACE folder in your GitHub repository. Replace index.html and keep vercel.json. Commit and wait for Vercel to redeploy.
-
-Important: login and submissions remain browser-only demo behavior. Do not use real passwords. Actual file uploads, secure authentication, and shared task records require a connected backend and file storage.
+Changes:
+- View Details now opens a dedicated task page with instructions, requirements, budget, deadline, and file submission form.
+- Includes a clear $5 test writing task.
+- Login includes email and password fields.
+- Signup includes password so demo login can check both email and password.
+- Demo submissions save submission metadata in browser localStorage only. The actual file is NOT uploaded to a server. This is not production authentication; passwords are stored in browser localStorage and should never be real passwords.
