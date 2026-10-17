@@ -1,31 +1,17 @@
-SKILLSPACE — Your Online Working Space
-=======================================
+SKILLSPACE FRONTEND — TASK DETAILS FIX (V2)
 
-This repository contains the SKILLSPACE frontend experience.
+This package includes the updated static frontend.
 
-Files
------
-- index.html: responsive website interface and interactive user flows.
+FILES
+- index.html: complete SKILLSPACE frontend. Task cards now use stable task IDs and delegated click handling for View details.
 - vercel.json: Vercel static deployment configuration.
-- README.txt: project and deployment notes.
 
-Deploy with Vercel
-------------------
-Place index.html and vercel.json at the repository root, or set Vercel's
-Root Directory to the folder containing them. Use Framework Preset: Other.
-A plain HTML website does not require a build or install command.
+IMPORTANT: To update the live website, replace the existing files in the GitHub repository's SKILLSPACE folder with these files. Do not upload this ZIP as a ZIP inside that folder. Open index.html in GitHub and confirm it contains the marker comment "SKILLSPACE task-details fix v2" near the page title, then commit the changes. If Vercel's Root Directory is SKILLSPACE, the index.html must be directly inside that folder.
 
-Implementation note
--------------------
-This package provides a realistic frontend experience for interface review.
-Account creation, task applications, referrals, course progress and withdrawal
-requests are currently simulated in the browser. A production backend,
-database, secure server-side authentication, admin workflows and approved
-payment integrations must be connected before accepting real users or money.
+TEST
+1. Open the live site and hard-refresh (Ctrl+Shift+R on Windows/Linux; Cmd+Shift+R on Mac).
+2. Choose Find work.
+3. Click View details on any task. A details dialog should open with category, description, budget, deadline, requirements and an Apply button.
+4. Try the first test task: "TEST JOB — Write a short product description" ($5 USD).
 
-Task budgets shown in USD are test listings for interface review, not live
-contracts or guaranteed earnings. Do not use the browser-only account flow
-for real passwords or sensitive information.
-
-
-Update: View details now opens a task details modal, including a dedicated $5 USD test job. Applying to a task is a frontend demo only; no live backend application, payment, or client notification is triggered.
+The Apply button is a frontend demo and does not submit a real application or trigger payment. This package does not add a live backend.
