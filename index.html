@@ -245,6 +245,156 @@ document.querySelector("#year").textContent=new Date().getFullYear();const urlRe
     }
   })();
 </script>
+<!-- SKILLSPACE SUPABASE REGISTRATION FIX -->
+<script>
+(function () {
+  const signupForm = document.getElementById("signupForm");
 
+  if (!signupForm) {
+    console.error("SKILLSPACE: Signup form was not found.");
+    return;
+  }
+
+  signupForm.onsubmit = async function (event) {
+    event.preventDefault();
+
+    const button = signupForm.querySelector('button[type="submit"], button:not([type])');
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Creating account...";
+    }
+
+    try {
+      // Confirm that the Supabase client is available.
+      if (
+        typeof supabaseClient === "undefined" ||
+        !supabaseClient.auth
+      ) {
+        throw new Error(
+          "Supabase is not initialized. Check the Supabase script above."
+        );
+      }
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim().toLowerCase();
+      const password = document.getElementById("signupPassword").value;
+      const country = document.getElementById("country").value;
+      const skill = document.getElementById("skill").value;
+
+      const referralInput = document.getElementById("signupReferralCode");
+      const referralCodeEntered = referralInput
+        ? referralInput.value.trim().toUpperCase()
+        : "";
+
+      if (!name || !email || !password) {
+        throw new Error("Please complete your name, email, and password.");
+      }
+
+      if (password.length < 6) {
+        throw new Error("Your password must contain at least 6 characters.");
+      }
+
+      // Create the real account in Supabase Authentication.
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            full_name: name,
+            country: country,
+            skill: skill,
+            referral_code:
+              "SS" + crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase(),
+            referred_by_code: referralCodeEntered || null
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user) {
+        throw new Error(
+          "Supabase did not return a user. Please try again."
+        );
+      }
+
+      console.log(
+        "SKILLSPACE account created in Supabase:",
+        data.user.id,
+        data.user.email
+      );
+
+      if (typeof notify === "function") {
+        notify(
+          data.session
+            ? "Account created successfully!"
+            : "Account created! Check your email to confirm your account before logging in."
+        );
+      } else {
+        alert(
+          data.session
+            ? "Your SKILLSPACE account was created successfully."
+            : "Your account was created. Please check your email for the confirmation link."
+        );
+      }
+
+      // Never save the password in localStorage.
+      if (data.session && typeof go === "function") {
+        const { data: profileResult, error: profileError } =
+          await supabaseClient
+            .from("profiles")
+            .select("*")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+        if (profileError) {
+          console.error("Profile lookup failed:", profileError);
+        }
+
+        const profile = profileResult || {};
+        const member = {
+          id: data.user.id,
+          name: profile.full_name || name,
+          email: data.user.email,
+          country: profile.country || country,
+          skill: profile.skill || skill,
+          plan: profile.membership_tier || "Free",
+          role: profile.role === "admin" ? "admin" : "member",
+          referralCode: profile.referral_code || "",
+          createdAt: data.user.created_at
+        };
+
+        localStorage.setItem(
+          "skillspaceDemoUser",
+          JSON.stringify(member)
+        );
+
+        if (typeof render === "function") render();
+        go("dashboard");
+      }
+
+    } catch (error) {
+      console.error("SKILLSPACE REGISTRATION ERROR:", error);
+
+      const message = error.message || "Registration failed. Please try again.";
+
+      if (typeof notify === "function") {
+        notify(message);
+      } else {
+        alert("Registration failed: " + message);
+      }
+
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Create account";
+      }
+    }
+  };
+})();
+</script>
 </body>
 </html>
