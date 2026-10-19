@@ -350,8 +350,49 @@ document.querySelector("#loginForm").onsubmit = async (e) => {
       notify("Login could not be completed. Please try again.");
       return;
     }// SKILLSPACE: Forgot Password
-document.querySelector("#forgotPasswordLink")?.addEventListener("click", async (e) => {
+// SKILLSPACE: Forgot Password
+document.addEventListener("click", async function (e) {
+  const link = e.target.closest("#forgotPasswordLink");
+
+  if (!link) return;
+
   e.preventDefault();
+  e.stopPropagation();
+
+  const emailInput = document.querySelector("#loginEmail");
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+
+  if (!email) {
+    notify("Enter your registered email address first.");
+    if (emailInput) emailInput.focus();
+    return;
+  }
+
+  if (!window.supabaseClient) {
+    notify("Connection error. Please refresh the page.");
+    return;
+  }
+
+  try {
+    const { error } =
+      await window.supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://www.skillspace.site/"
+      });
+
+    if (error) {
+      console.error("Password reset error:", error);
+      notify("Unable to send the reset email. Please try again.");
+      return;
+    }
+
+    notify(
+      "If an account exists for that email, a reset link will be sent. Check your inbox and spam folder."
+    );
+  } catch (error) {
+    console.error("Password reset error:", error);
+    notify("Something went wrong. Please try again.");
+  }
+});
 
   const email = document.querySelector("#loginEmail").value.trim().toLowerCase();
 
