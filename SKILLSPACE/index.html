@@ -51,7 +51,45 @@ body{font-family:'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:.00
   >
     Forgot Password?
   </a>
-</div></div><button class="btn primary">Continue to workspace →</button></form><p class="tiny">New to SKILLSPACE? <a href="#signup" data-go="signup" style="color:#159858">Create an account</a></p></div></section>
+</div></div><button class="btn primary">Continue to workspace →</button></form><p class="tiny">New to SKILLSPACE? <a href="#signup" data-go="signup" style="color:#159858">Create an account</a></p></div></section><!-- SKILLSPACE: Forgot Password Page -->
+<section class="page" id="p-forgot-password">
+  <div class="form">
+    <span class="kicker">Account recovery</span>
+
+    <h1>Forgot your password?</h1>
+
+    <p>
+      Enter the email address associated with your SKILLSPACE account.
+      We'll send you a link to reset your password.
+    </p>
+
+    <form id="forgotPasswordForm">
+      <div class="field">
+        <label for="resetEmail">Email address</label>
+        <input
+          id="resetEmail"
+          type="email"
+          autocomplete="email"
+          placeholder="Enter your account email"
+          required
+        >
+      </div>
+
+      <button class="btn primary" type="submit">
+        Send Reset Link →
+      </button>
+    </form>
+
+    <p class="tiny">
+      Remember your password?
+      <a href="#login" data-go="login" style="color:#159858">
+        Back to Login
+      </a>
+    </p>
+
+    <p id="resetMessage" class="tiny" aria-live="polite"></p>
+  </div>
+</section>
 <section class="page" id="p-task"><div class="section"><div class="wrap"><button class="btn outline small" data-go="jobs">← Back to all tasks</button><div class="task-layout" style="margin-top:18px"><div><div class="task-panel"><span class="tag" id="taskCategory">Writing</span><h1 id="taskTitle" style="font-size:34px;color:var(--navy);letter-spacing:-.8px">Task details</h1><p class="muted" id="taskDescription"></p><h3>What you need to do</h3><div id="taskInstructions"></div><h3>Submission requirements</h3><ul id="taskRequirements"></ul><p class="tiny muted">Use your own work and check your file before submitting.</p></div><div class="task-panel"><h2>Submit your completed project</h2><p class="muted">Choose your finished file and add a note for the reviewer.</p><form id="submissionForm"><div class="field"><label for="projectFile">Completed project file</label><input class="task-upload" id="projectFile" type="file" required accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.mp3,.wav,.mp4"></div><div class="field"><label for="submissionNote">Message to reviewer</label><textarea id="submissionNote" placeholder="Briefly describe your completed work..."></textarea></div><button class="btn primary" type="submit">Submit completed project →</button></form></div></div><aside><div class="task-panel"><h3>Task summary</h3><div class="row"><span>💵</span><span><b id="taskBudget">$5.00 <span class="kes">(KSh 650.49)</span></b><br><span class="tiny muted">Task budget (USD; KES equivalent shown)</span></span></div><div class="row"><span>🗓️</span><span><b id="taskDeadline">2 days</b><br><span class="tiny muted">Deadline</span></span></div><div class="row"><span>📌</span><span><b>Open for submissions</b><br><span class="tiny muted">Task details and access are shown above.</span></span></div><button class="btn dark" style="width:100%" data-go="signup">Create account</button></div></aside></div></div></section><section class="page" id="p-dashboard"><div class="dashboard"><aside class="side"><b>MY WORKSPACE</b><p><a href="#dashboard" data-go="dashboard">▦ Overview</a><a href="#jobs" data-go="jobs">💼 Browse work</a><a href="#academy" data-go="academy">🎓 Academy</a><a href="#marketplace" data-go="marketplace">🛍️ Marketplace</a><a href="#referrals" data-go="referrals">🔗 Referrals</a><a href="#earnings" data-go="earnings">💳 Earnings</a><a href="#profile" data-go="profile">👤 My profile</a><a href="#pricing" data-go="pricing">✦ Membership</a><a href="#home" data-go="home">↪ Log out</a></p></aside><div class="main"><h1 id="welcome">Welcome to your workspace</h1><p><span class="plan-current" id="memberPlanBadge">Current plan: Free</span></p><p class="muted">Your activity, opportunities, and account details at a glance.</p><div class="appstats task-first-stats"><div class="card task-earning-card"><span class="muted tiny">Task earnings</span><b id="dashTaskEarnings">$0.00 <span class="kes">(KSh 0.00)</span></b><span class="tiny muted">Approved tasks only</span></div><div class="card"><span class="muted tiny">Tasks completed</span><b id="dashTasksCompleted">0</b><span class="tiny muted">All submitted tasks</span></div><div class="card"><span class="muted tiny">Pending approval</span><b id="dashTasksPending">0</b><span class="tiny muted">Awaiting review</span></div><div class="card"><span class="muted tiny">Approved tasks</span><b id="dashTasksApproved">0</b><span class="tiny muted">Accepted by admin</span></div></div><div class="appstats secondary-stats"><div class="card"><span class="muted tiny">Referral earnings</span><b id="dashReferralEarnings">$0.00 <span class="kes">(KSh 0.00)</span></b><span class="tiny muted">25% of verified paid memberships</span></div><div class="card"><span class="muted tiny">Clients referred</span><b id="dashReferralCount">0</b><span class="tiny muted">Registered using your code</span></div><div class="card"><span class="muted tiny">Membership plan</span><b id="dashPlanName">Free</b><span class="tiny muted">Your current access level</span></div><div class="card"><span class="muted tiny">Profile completion</span><b id="dashProfileCompletion">0%</b></div></div><div class="referral-cta card" style="margin-top:16px"><div><b>Refer & earn 25%</b><p class="muted tiny">Earn 25% of the membership amount paid by each client you refer, after the payment is verified.</p></div><button class="btn primary" data-go="referrals">View referral earnings →</button></div><div class="card" style="margin-top:18px;overflow:auto"><h3>Suggested opportunities</h3><table class="table"><thead><tr><th>Opportunity</th><th>Category</th><th>Task budget (USD)</th><th></th></tr></thead><tbody id="dashJobs"></tbody></table></div><div class="card" style="margin-top:18px"><h3>Profile snapshot</h3><b id="dashName">Member</b><p class="muted" id="dashEmail">member@skillspace.com</p><button class="btn outline" data-go="profile">Edit profile →</button></div></div></div></section>
 <section class="page" id="p-admin"><div class="section"><div class="wrap"><div class="heading"><span class="kicker">Restricted administration</span><h2>SKILLSPACE Admin Console</h2><p>Manage listings and learning content, review submissions, inspect client activity, and set the support contact.</p></div><div class="notice">Admin actions on this static prototype are saved in this browser only. Production admin access, cross-device records, uploaded files and approvals must be enforced by a secure backend and server-side role permissions.</div>
 <div class="admin-section"><h2>Add a job or task</h2><form id="adminJobForm"><div class="admin-form-grid"><div class="field"><label for="adminJobTitle">Task title</label><input id="adminJobTitle" required maxlength="120"></div><div class="field"><label for="adminJobCategory">Category</label><input id="adminJobCategory" required maxlength="60" placeholder="e.g. Writing"></div><div class="field"><label for="adminJobBudget">Budget (USD)</label><input id="adminJobBudget" type="number" min="0.01" max="10000" step="0.01" required></div><div class="field"><label for="adminJobTier">Minimum plan</label><select id="adminJobTier"><option>Free</option><option>Basic</option><option>Standard</option><option>Premium</option></select></div><div class="field"><label for="adminJobDeadline">Deadline</label><input id="adminJobDeadline" value="2 days" maxlength="40"></div><div class="field"><label for="adminJobDescription">Short description</label><input id="adminJobDescription" required maxlength="300"></div><div class="field" style="grid-column:1/-1"><label for="adminJobInstructions">Instructions</label><textarea id="adminJobInstructions" required maxlength="3000"></textarea></div></div><button class="btn primary" type="submit">Add task</button></form><div id="adminJobList"></div></div>
