@@ -305,7 +305,93 @@ document.querySelector("#signupForm").onsubmit = async (e) => {
     if (signupButton) signupButton.disabled = false;
   }
 };
-document.querySelector("#loginForm").onsubmit=e=>{e.preventDefault();let u=user();if(u&&u.email.toLowerCase()===document.querySelector("#loginEmail").value.trim().toLowerCase()&&u.password===document.querySelector("#loginPassword").value){recordClient(u);render();go("dashboard")}else notify("Email or password is incorrect. This browser demo recognizes the account currently stored on this device.")};
+document.querySelector("#loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+
+  const button = e.submitter;
+  if (button) button.disabled = true;
+
+  try {
+    const email = document
+      .querySelector("#loginEmail")
+      .value.trim()
+      .toLowerCase();
+
+    const password = document.querySelector("#loginPassword").value;
+
+    if (!window.supabaseClient) {
+      notify("Connection error. Please refresh the page and try again.");
+      return;
+    }
+
+    const { data, error } =
+      await window.supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    if (error) {
+      console.error("Login failed:", error);
+      notify("Login failed. Check your email and password, then try again.");
+      return;
+    }
+
+    const authUser = data.user;
+
+    if (!authUser) {
+      notify("Login could not be completed. Please try again.");
+      return;
+    }
+
+    // Load the member's profile from Supabase.
+    const { data: profile, error: profileError } =
+      await window.supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+    if (profileError) {
+      console.error("Profile loading failed:", profileError);
+    }
+
+    // Keep only non-sensitive information in the legacy UI cache.
+    const member = {
+      id: authUser.id,
+      email: authUser.email,
+      name: profile?.full_name ||
+            authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            authUser.email.split("@")[0],
+      country: profile?.country ||
+               authUser.user_metadata?.country ||
+               "",
+      skill: profile?.skill ||
+             authUser.user_metadata?.skill ||
+             "",
+      referralCode: profile?.referral_code ||
+                    authUser.user_metadata?.referral_code ||
+                    "",
+      plan: profile?.membership_tier || "Free",
+      role: profile?.role || "user"
+    };
+
+    localStorage.setItem(
+      "skillspaceDemoUser",
+      JSON.stringify(member)
+    );
+
+    render();
+    go("dashboard");
+
+    notify("Welcome back to SKILLSPACE!");
+  } catch (err) {
+    console.error("Unexpected login error:", err);
+    notify("Something went wrong. Please try logging in again.");
+  } finally {
+    if (button) button.disabled = false;
+  }
+};
 document.querySelector("#profileForm").onsubmit=e=>{e.preventDefault();let u={...(user()||{}),name:document.querySelector("#editName").value.trim(),email:document.querySelector("#editEmail").value.trim(),skill:document.querySelector("#editSkill").value};localStorage.setItem("skillspaceDemoUser",JSON.stringify(u));recordClient(u);render();notify("Profile changes saved.");go("dashboard")};
 let currentTask=null;
 function openTask(title){if(!requireMemberForContent("task",title))return;currentTask=jobs.find(x=>x.title===title)||jobs[0];const plan=currentPlan();if(!planCanUseTask(currentTask,plan)){const required=currentTask.accessTier||"Premium";showAccessGate(currentTask.title,"The task you selected is not included in your "+plan+" plan. Upgrade to "+required+" to open and submit this task.",required,false);return}document.querySelector("#taskCategory").textContent=currentTask.cat;document.querySelector("#taskTitle").textContent=currentTask.title;document.querySelector("#taskDescription").textContent=currentTask.desc;document.querySelector("#taskBudget").innerHTML=moneyPair(currentTask.budget);document.querySelector("#taskDeadline").textContent=currentTask.deadline||"3 days";document.querySelector("#taskInstructions").textContent=currentTask.instructions||currentTask.desc;let req=currentTask.requirements||["Complete the task described above.","Check spelling, accuracy and formatting.","Upload the finished file using the submission form."];document.querySelector("#taskRequirements").innerHTML=req.map(x=>"<li>"+x+"</li>").join("");go("task");}
