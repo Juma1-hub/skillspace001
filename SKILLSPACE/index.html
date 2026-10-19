@@ -197,4 +197,17 @@ document.querySelector("#year").textContent=new Date().getFullYear();const urlRe
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
   );
+</script><!-- SKILLSPACE Supabase connection -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  window.SUPABASE_URL = "https://zkxxmuujhlvifhlzntoo.supabase.co";
+
+  window.SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_ogsc7DpbRFwp6lubR8rnOg_VkxdC8xv";
+
+  window.supabaseClient = window.supabase.createClient(
+    window.SUPABASE_URL,
+    window.SUPABASE_PUBLISHABLE_KEY
+  );
 </script></body></html>
