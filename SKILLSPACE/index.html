@@ -186,4 +186,15 @@ document.addEventListener("click",e=>{const rm=e.target.closest("[data-admin-rem
 document.querySelector("#copyRef").onclick=async()=>{let el=document.querySelector("#refLink");try{await navigator.clipboard.writeText(el.value);notify("Referral link copied.")}catch(e){el.select();notify("Select and copy your referral link.")}};
 document.querySelector("#amount").addEventListener("input",e=>{const value=Math.max(0,Number(e.target.value)||0);document.querySelector("#withdrawalKesPreview").textContent="Approximate local equivalent: KSh "+(value*USD_KES_RATE).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})});document.querySelector("#withdraw").onclick=()=>notify("Your withdrawal request has been saved on this device.");
 document.querySelector("#year").textContent=new Date().getFullYear();const urlReferral=new URLSearchParams(location.search).get("ref");if(urlReferral)document.querySelector("#signupReferralCode").value=urlReferral.toUpperCase();const savedTheme=localStorage.getItem("skillspaceTheme");if(savedTheme==="dark")document.body.classList.add("dark-theme");document.querySelector("#themeToggleMenu").addEventListener("click",()=>{document.body.classList.toggle("dark-theme");localStorage.setItem("skillspaceTheme",document.body.classList.contains("dark-theme")?"dark":"light");syncUI()});document.querySelector("#adminReferralCodeForm").onsubmit=e=>{e.preventDefault();if(!user()||user().role!=="admin"){notify("Admin access required.");return}const email=document.querySelector("#adminReferralClientEmail").value.trim().toLowerCase();const code=document.querySelector("#adminReferralCodeValue").value.trim().toUpperCase();if(!/^[A-Z0-9_-]{3,32}$/.test(code)){notify("Use 3–32 letters, numbers, dashes or underscores for a referral code.");return}const clients=readLocal("skillspaceDemoClients",[]);const target=clients.find(c=>c.email===email);if(!target){notify("Client not found in the browser-local client records.");return}if(clients.some(c=>c.email!==email&&(c.referralCode||"").toUpperCase()===code)){notify("That referral code is already assigned to another client.");return}target.referralCode=code;writeLocal("skillspaceDemoClients",clients);const active=user();if(active&&active.email.toLowerCase()===email){active.referralCode=code;localStorage.setItem("skillspaceDemoUser",JSON.stringify(active))}e.target.reset();renderAdmin();notify("Referral code assigned to "+(target.name||target.email)+".")};loadAdminManagedContent();render();syncUI();go(location.hash.slice(1)||"home");
+</script><!-- SKILLSPACE Supabase connection -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = "https://zkxxmuujhlvifhlzntoo.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ogsc7DpbRFwp6lubR8rnOg_VkxdC8xv";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
 </script></body></html>
