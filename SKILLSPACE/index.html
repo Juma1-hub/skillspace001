@@ -389,50 +389,334 @@ document.querySelector("#loginForm").onsubmit = async (e) => {
       notify("Login could not be completed. Please try again.");
       return;
     }// SKILLSPACE: Forgot Password
-// SKILLSPACE: Forgot Password
-document.addEventListener("click", async function (e) {
-  const link = e.target.closest("#forgotPasswordLink");
+// SKILLSPACE: Password recovery, resend countdown and request limits
+(() => {
+  const STORAGE_KEY = "skillspacePasswordResetLimits";
+  const WAIT_MS = 60 * 1000;
+  const LOCKOUT_MS = 10 * 60 * 1000;
+  const MAX_REQUESTS = 5;
 
-  if (!link) return;
+  let timer = null;
 
-  e.preventDefault();
-  e.stopPropagation();
-
-  const emailInput = document.querySelector("#loginEmail");
-  const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
-
-  if (!email) {
-    notify("Enter your registered email address first.");
-    if (emailInput) emailInput.focus();
-    return;
+  function getState() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+        requests: [],
+        blockedUntil: 0
+      };
+    } catch {
+      return { requests: [], blockedUntil: 0 };
+    }
   }
 
-  if (!window.supabaseClient) {
-    notify("Connection error. Please refresh the page.");
-    return;
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 
-  try {
-    const { error } =
-      await window.supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://www.skillspace.site/"
-      });
+  function cleanState(state) {
+    const now = Date.now();
 
-    if (error) {
-      console.error("Password reset error:", error);
-      notify("Unable to send the reset email. Please try again.");
+    state.requests = (state.requests || []).filter(
+      time => now - time < WAIT_MS
+    );
+
+    if (state.blockedUntil && now >= state.blockedUntil) {
+      return { requests: [], blockedUntil: 0 };
+    }
+
+    return state;
+  }
+
+  function stopTimer() {
+    if (timer) clearInterval(timer);
+    timer = null;
+  }
+
+  function setMessage(html) {
+    const area = document.querySelector("#resetMessage");
+    if (area) area.innerHTML = html;
+  }
+
+  function showEmailForm(email = "") {
+    stopTimer();
+
+    const form = document.querySelector("#forgotPasswordForm");
+    const input = document.querySelector("#resetEmail");
+
+    if (form) form.style.display = "";
+    if (input && email) input.value = email;
+
+    setMessage("");
+
+    if (input) input.focus();
+  }
+
+  function showSupport() {
+    const form = document.querySelector("#forgotPasswordForm");
+    if (form) form.style.display = "none";
+
+    setMessage(`
+      <p><strong>Temporary password-reset limit reached.</strong></p>
+      <p>
+        You've reached five successful reset-email requests.
+        Please wait 10 minutes before requesting another link.
+      </p>
+      <p>If you need help, contact SKILLSPACE Support.</p>
+      <p id="resetCountdown" aria-live="polite"></p>
+      <button type="button" class="btn primary" id="resetSupportButton">
+        Contact Support →
+      </button>
+    `);
+
+    document.querySelector("#resetSupportButton")?.addEventListener(
+      "click",
+      () => go("support")
+    );
+  }
+
+  function startLockoutCountdown() {
+    stopTimer();
+    showSupport();
+
+    function tick() {
+      const state = cleanState(getState());
+      saveState(state);
+
+      const remaining = Math.max(0, state.blockedUntil - Date.now());
+      const countdown = document.querySelector("#resetCountdown");
+
+      if (remaining <= 0) {
+        stopTimer();
+
+        setMessage(`
+          <p>Your waiting period has ended. You can request a new reset link.</p>
+          <button type="button" class="btn primary" id="returnToResetForm">
+            Request Another Link →
+          </button>
+        `);
+
+        document.querySelector("#returnToResetForm")?.addEventListener(
+          "click",
+          () => showEmailForm()
+        );
+
+        return;
+      }
+
+      if (countdown) {
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.ceil((remaining % 60000) / 1000);
+
+        countdown.textContent =
+          `Time remaining: ${minutes}:${String(seconds).padStart(2, "0")}`;
+      }
+    }
+
+    tick();
+    timer = setInterval(tick, 1000);
+  }
+
+  function startWaitCountdown(email) {
+    stopTimer();
+
+    function tick() {
+      const state = cleanState(getState());
+      saveState(state);
+
+      if (state.blockedUntil > Date.now()) {
+        startLockoutCountdown();
+        return;
+      }
+
+      const lastRequest = state.requests.length
+        ? Math.max(...state.requests)
+        : 0;
+
+      const remaining = Math.max(
+        0,
+        WAIT_MS - (Date.now() - lastRequest)
+      );
+
+      const countdown = document.querySelector("#resetCountdown");
+      const button = document.querySelector("#resendResetButton");
+
+      if (remaining <= 0) {
+        stopTimer();
+
+        if (button) button.disabled = false;
+
+        if (countdown) {
+          countdown.textContent = "You can request another reset link now.";
+        }
+
+        return;
+      }
+
+      if (button) button.disabled = true;
+
+      if (countdown) {
+        countdown.textContent =
+          `You can resend the link in ${Math.ceil(remaining / 1000)} seconds.`;
+      }
+    }
+
+    tick();
+    timer = setInterval(tick, 1000);
+  }
+
+  function showConfirmation(email) {
+    const form = document.querySelector("#forgotPasswordForm");
+
+    if (form) form.style.display = "none";
+
+    setMessage(`
+      <p><strong>Check your email inbox!</strong></p>
+      <p>
+        If an account exists for that address, we've sent a password-reset
+        link. Please check your inbox and spam/junk folder.
+      </p>
+      <p id="resetCountdown" aria-live="polite"></p>
+      <button type="button" class="btn primary" id="resendResetButton" disabled>
+        Resend Reset Link
+      </button>
+    `);
+
+    document.querySelector("#resendResetButton")?.addEventListener(
+      "click",
+      () => {
+        const state = cleanState(getState());
+        saveState(state);
+
+        if (state.blockedUntil > Date.now()) {
+          startLockoutCountdown();
+          return;
+        }
+
+        const lastRequest = state.requests.length
+          ? Math.max(...state.requests)
+          : 0;
+
+        if (lastRequest && Date.now() - lastRequest < WAIT_MS) {
+          return;
+        }
+
+        showEmailForm(email);
+      }
+    );
+
+    const state = cleanState(getState());
+    saveState(state);
+
+    if (state.blockedUntil > Date.now()) {
+      startLockoutCountdown();
+    } else {
+      startWaitCountdown(email);
+    }
+  }
+
+  // Open the dedicated recovery page.
+  document.addEventListener("click", function (e) {
+    const link = e.target.closest("#forgotPasswordLink");
+    if (!link) return;
+
+    e.preventDefault();
+    go("forgot-password");
+
+    const state = cleanState(getState());
+    saveState(state);
+
+    if (state.blockedUntil > Date.now()) {
+      startLockoutCountdown();
+    } else {
+      showEmailForm();
+    }
+  });
+
+  // Submit the recovery-email form.
+  document.addEventListener("submit", async function (e) {
+    if (!e.target.matches("#forgotPasswordForm")) return;
+
+    e.preventDefault();
+
+    const form = e.target;
+    const input = document.querySelector("#resetEmail");
+    const email = input ? input.value.trim().toLowerCase() : "";
+
+    if (!input || !input.checkValidity()) {
+      input?.reportValidity();
       return;
     }
 
-    notify(
-      "If an account exists for that email, a reset link will be sent. Check your inbox and spam folder."
-    );
-  } catch (error) {
-    console.error("Password reset error:", error);
-    notify("Something went wrong. Please try again.");
-  }
-});
+    if (!window.supabaseClient) {
+      setMessage("<p>Connection error. Please refresh the page and try again.</p>");
+      return;
+    }
 
+    let state = cleanState(getState());
+    const now = Date.now();
+
+    if (state.blockedUntil > now) {
+      saveState(state);
+      startLockoutCountdown();
+      return;
+    }
+
+    const lastRequest = state.requests.length
+      ? Math.max(...state.requests)
+      : 0;
+
+    if (lastRequest && now - lastRequest < WAIT_MS) {
+      showConfirmation(email);
+      return;
+    }
+
+    if (state.requests.length >= MAX_REQUESTS) {
+      state.blockedUntil = now + LOCKOUT_MS;
+      saveState(state);
+      startLockoutCountdown();
+      return;
+    }
+
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+
+    try {
+      const { error } =
+        await window.supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: "https://www.skillspace.site/"
+        });
+
+      if (error) {
+        console.error("Password reset error:", error);
+
+        setMessage(`
+          <p>We couldn't process your request right now.</p>
+          <p>Please wait a moment and try again.</p>
+        `);
+
+        return;
+      }
+
+      state = cleanState(getState());
+      state.requests.push(Date.now());
+
+      if (state.requests.length >= MAX_REQUESTS) {
+        state.blockedUntil = Date.now() + LOCKOUT_MS;
+      }
+
+      saveState(state);
+      showConfirmation(email);
+
+    } catch (error) {
+      console.error("Password reset error:", error);
+
+      setMessage("<p>Something went wrong. Please try again later.</p>");
+
+    } finally {
+      if (button) button.disabled = false;
+    }
+  });
+})();
     // Load the member's profile from Supabase.
     const { data: profile, error: profileError } =
       await window.supabaseClient
