@@ -166,7 +166,145 @@ document.querySelector("#menu").onclick=()=>{const links=document.querySelector(
 function user(){try{return JSON.parse(localStorage.getItem("skillspaceDemoUser")||"null")}catch(e){return null}}
 function updateDash(){let u=user();if(!u){go("login");return}recordClient(u);const mySubs=currentSubmissions().filter(x=>(x.email||"").toLowerCase()===(u.email||"").toLowerCase());const approvedSubs=mySubs.filter(x=>x.status==="Approved");const pendingSubs=mySubs.filter(x=>(x.status||"Pending review")==="Pending review");const approvedTaskEarnings=approvedSubs.reduce((sum,x)=>{const job=jobs.find(j=>j.title===x.task);return sum+Number(x.budgetUSD??x.amountUSD??(job?job.budget:0)??0)},0);document.querySelector("#dashTaskEarnings").innerHTML=moneyPair(approvedTaskEarnings);document.querySelector("#dashTasksCompleted").textContent=mySubs.length;document.querySelector("#dashTasksPending").textContent=pendingSubs.length;document.querySelector("#dashTasksApproved").textContent=approvedSubs.length;document.querySelector("#welcome").textContent="Welcome, "+(u.name||"Member").split(" ")[0];document.querySelector("#dashName").textContent=u.name||"Member";document.querySelector("#dashEmail").textContent=u.email||"";document.querySelector("#memberPlanBadge").textContent="Current plan: "+(u.plan||"Free");document.querySelector("#dashProfileCompletion").textContent=profileCompletion(u)+"%";const m=referralMetrics(u);document.querySelector("#dashReferralEarnings").innerHTML=moneyPair(m.total);document.querySelector("#dashReferralCount").textContent=m.clients.length;document.querySelector("#dashPlanName").textContent=u.plan||"Free";refreshReferralUI();let clients=readLocal("skillspaceDemoClients",[]);const idx=clients.findIndex(x=>x.email===(u.email||"").toLowerCase());if(idx>=0){clients[idx].profileCompletion=profileCompletion(u);clients[idx].plan=u.plan||"Free";writeLocal("skillspaceDemoClients",clients)}}
 function fillProfile(){let u=user()||{name:"Member",email:"member@skillspace.com",skill:"Writing"};document.querySelector("#editName").value=u.name;document.querySelector("#editEmail").value=u.email;document.querySelector("#editSkill").value=u.skill||"Writing"}
-document.querySelector("#signupForm").onsubmit=e=>{e.preventDefault();const requestedPlan=sessionStorage.getItem("skillspaceSelectedPlan")||"Free";const email=document.querySelector("#email").value.trim().toLowerCase();const enteredCode=document.querySelector("#signupReferralCode").value.trim().toUpperCase();const clients=readLocal("skillspaceDemoClients",[]);let referrer=null;if(enteredCode){referrer=clients.find(c=>(c.referralCode||"").toUpperCase()===enteredCode);if(!referrer){notify("That referral code was not found. Check it with the person who invited you, or leave it blank.");return}if(referrer.email===email){notify("You cannot use your own referral code.");return}}let u={name:document.querySelector("#name").value.trim(),email,password:document.querySelector("#signupPassword").value,country:document.querySelector("#country").value,skill:document.querySelector("#skill").value,plan:"Free",referralCode:generateReferralCode(document.querySelector("#name").value,email),referredByCode:referrer?referrer.referralCode:"",referredByEmail:referrer?referrer.email:"",referredByName:referrer?referrer.name:"",createdAt:new Date().toISOString()};if(requestedPlan!=="Free")u.pendingPlan=requestedPlan;localStorage.setItem("skillspaceDemoUser",JSON.stringify(u));recordClient(u);render();if(requestedPlan!=="Free"){renderPaymentPage(requestedPlan);notify("Account created. Enter your M-Pesa number to continue with payment.");go("payment")}else{sessionStorage.removeItem("skillspaceSelectedPlan");notify(referrer?"Account created. Referral credited to "+referrer.name+" once your membership payment is verified.":"Your Free plan is active.");render();go("dashboard")}};
+document.querySelector("#signupForm").onsubmit = async (e) => {
+  e.preventDefault();
+
+  const signupButton = e.submitter;
+  if (signupButton) signupButton.disabled = true;
+
+  try {
+    const requestedPlan =
+      sessionStorage.getItem("skillspaceSelectedPlan") || "Free";
+
+    const name = document.querySelector("#name").value.trim();
+    const email = document.querySelector("#email").value.trim().toLowerCase();
+    const password = document.querySelector("#signupPassword").value;
+    const country = document.querySelector("#country").value;
+    const skill = document.querySelector("#skill").value;
+    const enteredCode = document
+      .querySelector("#signupReferralCode")
+      .value.trim()
+      .toUpperCase();
+
+    const client = window.supabaseClient;
+
+    if (!client) {
+      notify("Connection error. Please refresh the page and try again.");
+      return;
+    }
+
+    if (!name || !email || !password || !country || !skill) {
+      notify("Please complete all required fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      notify("Your password must contain at least 6 characters.");
+      return;
+    }
+
+    // Validate referral codes against Supabase, not browser storage.
+    let referrerId = null;
+
+    if (enteredCode) {
+      const { data: referrer, error: referralError } = await client
+        .from("profiles")
+        .select("id, referral_code")
+        .eq("referral_code", enteredCode)
+        .maybeSingle();
+
+      if (referralError) {
+        console.error("Referral lookup failed:", referralError);
+        notify("We could not verify that referral code. Please try again.");
+        return;
+      }
+
+      if (!referrer) {
+        notify("Referral code not found. Check it or leave it blank.");
+        return;
+      }
+
+      referrerId = referrer.id;
+    }
+
+    // Generate a referral code for the new member.
+    const referralCode = (
+      name.replace(/[^a-z0-9]/gi, "").substring(0, 5) +
+      Math.random().toString(36).substring(2, 7)
+    ).toUpperCase();
+
+    // Create a real Supabase Authentication account.
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+          name: name,
+          country: country,
+          skill: skill,
+          referral_code: referralCode,
+          referred_by: referrerId
+        }
+      }
+    });
+
+    if (error) {
+      console.error("Supabase signup failed:", error);
+      notify(error.message || "Registration failed. Please try again.");
+      return;
+    }
+
+    if (!data.user) {
+      notify("Registration could not be completed. Please try again.");
+      return;
+    }
+
+    // Do not store the password in localStorage.
+    const u = {
+      id: data.user.id,
+      name: name,
+      email: email,
+      country: country,
+      skill: skill,
+      plan: "Free",
+      referralCode: referralCode,
+      createdAt: new Date().toISOString()
+    };
+
+    if (requestedPlan !== "Free") {
+      u.pendingPlan = requestedPlan;
+    }
+
+    if (!data.session) {
+      notify(
+        "Your account has been created. Please check your email to confirm your account before signing in."
+      );
+      return;
+    }
+
+    // Cache only non-sensitive display information.
+    localStorage.setItem("skillspaceDemoUser", JSON.stringify(u));
+
+    if (requestedPlan !== "Free") {
+      renderPaymentPage(requestedPlan);
+      notify(
+        "Account created successfully. Complete your membership payment to activate your selected plan."
+      );
+      go("payment");
+    } else {
+      sessionStorage.removeItem("skillspaceSelectedPlan");
+      notify("Your SKILLSPACE account has been created successfully!");
+      render();
+      go("dashboard");
+    }
+  } catch (err) {
+    console.error("Unexpected registration error:", err);
+    notify("Something went wrong during registration. Please try again.");
+  } finally {
+    if (signupButton) signupButton.disabled = false;
+  }
+};
 document.querySelector("#loginForm").onsubmit=e=>{e.preventDefault();let u=user();if(u&&u.email.toLowerCase()===document.querySelector("#loginEmail").value.trim().toLowerCase()&&u.password===document.querySelector("#loginPassword").value){recordClient(u);render();go("dashboard")}else notify("Email or password is incorrect. This browser demo recognizes the account currently stored on this device.")};
 document.querySelector("#profileForm").onsubmit=e=>{e.preventDefault();let u={...(user()||{}),name:document.querySelector("#editName").value.trim(),email:document.querySelector("#editEmail").value.trim(),skill:document.querySelector("#editSkill").value};localStorage.setItem("skillspaceDemoUser",JSON.stringify(u));recordClient(u);render();notify("Profile changes saved.");go("dashboard")};
 let currentTask=null;
