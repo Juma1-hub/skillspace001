@@ -394,37 +394,6 @@ document.addEventListener("click", async function (e) {
   }
 });
 
-  const email = document.querySelector("#loginEmail").value.trim().toLowerCase();
-
-  if (!email) {
-    notify("Please enter your registered email address in the email field first.");
-    document.querySelector("#loginEmail").focus();
-    return;
-  }
-
-  if (!window.supabaseClient) {
-    notify("Connection error. Please refresh the page and try again.");
-    return;
-  }
-
-  try {
-    const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://www.skillspace.site/"
-    });
-
-    if (error) {
-      console.error("Password recovery error:", error);
-      notify("We could not send the reset email. Please try again.");
-      return;
-    }
-
-    notify("If an account exists for that email, a password-reset link will be sent. Please check your inbox and spam folder.");
-  } catch (err) {
-    console.error(err);
-    notify("Something went wrong. Please try again.");
-  }
-});
-
     // Load the member's profile from Supabase.
     const { data: profile, error: profileError } =
       await window.supabaseClient
