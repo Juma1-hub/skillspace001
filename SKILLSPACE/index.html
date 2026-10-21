@@ -250,30 +250,28 @@ document.querySelector("#signupForm").onsubmit = async (e) => {
       return;
     }
 
-    // Validate referral codes against Supabase, not browser storage.
-    let referrerId = null;
+  // Validate referral codes using the secure Supabase function.
+let referrerId = null;
 
-    if (enteredCode) {
-      const { data: referrer, error: referralError } = await client
-        .from("profiles")
-        .select("id, referral_code")
-        .eq("referral_code", enteredCode)
-        .maybeSingle();
+if (enteredCode) {
+  const { data: referrerIdResult, error: referralError } =
+    await client.rpc("verify_referral_code", {
+      p_referral_code: enteredCode
+    });
 
-      if (referralError) {
-        console.error("Referral lookup failed:", referralError);
-       notify("Referral lookup error: " + referralError.message);
-        notify("We could not verify that referral code. Please try again.");
-        return;
-      }
+  if (referralError) {
+    console.error("Referral lookup failed:", referralError);
+    notify("We could not verify that referral code. Please try again.");
+    return;
+  }
 
-      if (!referrer) {
-        notify("Referral code not found. Check it or leave it blank.");
-        return;
-      }
+  if (!referrerIdResult) {
+    notify("Referral code not found. Check it or leave it blank.");
+    return;
+  }
 
-      referrerId = referrer.id;
-    }
+  referrerId = referrerIdResult;
+}
 
     // Generate a referral code for the new member.
     const referralCode = (
