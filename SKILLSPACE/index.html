@@ -262,6 +262,7 @@ document.querySelector("#signupForm").onsubmit = async (e) => {
 
       if (referralError) {
         console.error("Referral lookup failed:", referralError);
+       notify("Referral lookup error: " + referralError.message);
         notify("We could not verify that referral code. Please try again.");
         return;
       }
