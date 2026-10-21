@@ -188,7 +188,8 @@ function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;"
 function numericPrice(value){return Number(String(value??0).replace(/[^0-9.]/g,""))||0}
 function moneyPair(value){const usd=numericPrice(value);const kes=usd*USD_KES_RATE;return `$${usd.toFixed(2)} <span class="kes">(KSh ${kes.toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})})</span>`}
 const planRanks={Free:0,Basic:1,Standard:2,Premium:3};
-function currentPlan(){const u=user();return u&&planRanks[u.plan]!==undefined?u.plan:"Free"}
+function currentPlan(){const u=user();if(!u)return "Free";const plan=String(u.plan||"Free");const normalized=plan.charAt(0).toUpperCase()+plan.slice(1).toLowerCase();return planRanks[normalized]!==undefined?normalized:"Free"}
+
 function taskLimit(plan=currentPlan()){return ({Free:5,Basic:10,Standard:20,Premium:Infinity})[plan]??5}
 function nextPlan(plan){return ({Free:"Basic",Basic:"Standard",Standard:"Premium",Premium:"Premium"})[plan]||"Basic"}
 function planPrice(plan){const p=plans.find(x=>x[0]===plan);return p?p[1]:"$0.00"}
