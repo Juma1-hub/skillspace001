@@ -283,16 +283,16 @@ if (enteredCode) {
     const { data, error } = await client.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: name,
-          name: name,
-          country: country,
-          skill: skill,
-          referral_code: referralCode,
-          referred_by: referrerId
-        }
-      }
+     options: {
+  data: {
+    full_name: name,
+    name: name,
+    country: country,
+    skill: skill,
+    referral_code: referralCode,
+    referred_by_code: enteredCode || null
+  }
+}
     });
 
     if (error) {
