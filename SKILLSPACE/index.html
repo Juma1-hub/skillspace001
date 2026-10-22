@@ -499,7 +499,7 @@ function requireMemberForContent(kind,title){if(!user()){showAccessGate(title,"C
 function serviceCanUse(service,plan=currentPlan()){return (planRanks[plan]??0)>=(planRanks[serviceMinPlan(service)]??0)}
 function jobCategoriesMarkup(){const cats=[...new Set(jobs.map(j=>j.cat))];return cats.map(cat=>`<article class="card category-card" data-job-category="${cat.replace(/"/g,"&quot;")}"><div class="feature-icon">💼</div><h3>${cat}</h3><p>${jobs.filter(j=>j.cat===cat).length} work opportunities in this category</p><span class="feature-action">Sign in to view tasks →</span></article>`).join("")}
 function serviceCategoriesMarkup(){const cats=[...new Set(services.map(s=>s[1]))];return cats.map(cat=>`<article class="card category-card" data-service-category="${cat.replace(/"/g,"&quot;")}"><div class="feature-icon">🛍️</div><h3>${cat}</h3><p>${services.filter(s=>s[1]===cat).length} service options in this category</p><span class="feature-action">Sign in to view services →</span></article>`).join("")}
-function syncUI(){const u=user();const logged=!!u;document.querySelectorAll('[data-go="signup"]').forEach(el=>el.classList.toggle("hidden",logged));document.querySelectorAll('[data-go="login"]').forEach(el=>el.classList.toggle("hidden",logged));const signupPage=document.querySelector("#p-signup");if(signupPage)signupPage.classList.toggle("member-hidden",logged);const quickDashboard=document.querySelector("#quickDashboard");if(quickDashboard)quickDashboard.classList.toggle("hidden",!logged);const workspace=document.querySelector("#homeWorkspacePreview");if(workspace)workspace.classList.toggle("hidden",!logged);const guestHero=document.querySelector("#guestHeroCard");if(guestHero)guestHero.classList.toggle("hidden",logged);const headerLogin=document.querySelector("#headerLogin");if(headerLogin)headerLogin.classList.toggle("hidden",logged);const headerSignup=document.querySelector("#headerSignup");if(headerSignup)headerSignup.classList.toggle("hidden",logged);const headerLogout=document.querySelector("#headerLogout");if(headerLogout)headerLogout.classList.toggle("hidden",!logged);const homeSignup=document.querySelector("#homeGetStartedFree");if(homeSignup)homeSignup.classList.toggle("hidden",logged);const menuLogin=document.querySelector("#menuLogin");if(menuLogin)menuLogin.classList.toggle("hidden",logged);const menuSignup=document.querySelector("#menuSignup");if(menuSignup)menuSignup.classList.toggle("hidden",logged);const menuLogout=document.querySelector("#menuLogout");if(menuLogout)menuLogout.classList.toggle("hidden",!logged);const menuAdmin=document.querySelector("#menuAdmin");if(menuAdmin)menuAdmin.classList.toggle("hidden",!(u&&u.role==="admin"));const quickAdmin=document.querySelector("#quickAdmin");if(quickAdmin)quickAdmin.classList.toggle("hidden",!(u&&u.role==="admin"));const completion=profileCompletion(u);const homeProgress=document.querySelector("#homeProfileCompletion");if(homeProgress)homeProgress.textContent=completion+"%";const progressBar=document.querySelector(".ew-mini-bar i");if(progressBar)progressBar.style.width=completion+"%";const email=readLocal("skillspaceSupportEmail","");const foot=document.querySelector("#footerSupportContact");if(email){foot.innerHTML=`<a class="btn primary" href="mailto:${email.replace(/"/g,"&quot;")}">Email support →</a><div class="tiny" style="margin-top:6px;color:#b8c5df">${email.replace(/</g,"&lt;")}</div>`}else{foot.innerHTML='<button class="btn primary" data-go="support">Contact support →</button>'}const supportDisplay=document.querySelector("#supportEmailDisplay");if(supportDisplay)supportDisplay.textContent=email?"Support email: "+email:"Use the form below to send a support request.";const themeBtn=document.querySelector("#themeToggleMenu");if(themeBtn)themeBtn.textContent=document.body.classList.contains("dark-theme")?"☀️ Switch to light theme":"🌙 Switch to dark theme"}
+function syncUI(){const u=user();const logged=!!u;document.querySelectorAll('[data-go="signup"]').forEach(el=>el.classList.toggle("hidden",logged));document.querySelectorAll('[data-go="login"]').forEach(el=>el.classList.toggle("hidden",logged));const signupPage=document.querySelector("#p-signup");if(signupPage)signupPage.classList.toggle("member-hidden",logged);const quickDashboard=document.querySelector("#quickDashboard");if(quickDashboard)quickDashboard.classList.toggle("hidden",!logged);const workspace=document.querySelector("#homeWorkspacePreview");if(workspace)workspace.classList.toggle("hidden",!logged);const guestHero=document.querySelector("#guestHeroCard");if(guestHero)guestHero.classList.toggle("hidden",logged);const headerLogin=document.querySelector("#headerLogin");if(headerLogin)headerLogin.classList.toggle("hidden",logged);const headerSignup=document.querySelector("#headerSignup");if(headerSignup)headerSignup.classList.toggle("hidden",logged);const headerLogout=document.querySelector("#headerLogout");if(headerLogout)headerLogout.classList.toggle("hidden",!logged);const homeSignup=document.querySelector("#homeGetStartedFree");if(homeSignup)homeSignup.classList.toggle("hidden",logged);const menuLogin=document.querySelector("#menuLogin");if(menuLogin)menuLogin.classList.toggle("hidden",logged);const menuSignup=document.querySelector("#menuSignup");if(menuSignup)menuSignup.classList.toggle("hidden",logged);const menuLogout=document.querySelector("#menuLogout");if(menuLogout)menuLogout.classList.toggle("hidden",!logged);const menuAdmin=document.querySelector("#menuAdmin");if(menuAdmin)menuAdmin.classList.toggle("hidden",!logged);const quickAdmin=document.querySelector("#quickAdmin");if(quickAdmin)quickAdmin.classList.toggle("hidden",!logged);const completion=profileCompletion(u);const homeProgress=document.querySelector("#homeProfileCompletion");if(homeProgress)homeProgress.textContent=completion+"%";const progressBar=document.querySelector(".ew-mini-bar i");if(progressBar)progressBar.style.width=completion+"%";const email=readLocal("skillspaceSupportEmail","");const foot=document.querySelector("#footerSupportContact");if(email){foot.innerHTML=`<a class="btn primary" href="mailto:${email.replace(/"/g,"&quot;")}">Email support →</a><div class="tiny" style="margin-top:6px;color:#b8c5df">${email.replace(/</g,"&lt;")}</div>`}else{foot.innerHTML='<button class="btn primary" data-go="support">Contact support →</button>'}const supportDisplay=document.querySelector("#supportEmailDisplay");if(supportDisplay)supportDisplay.textContent=email?"Support email: "+email:"Use the form below to send a support request.";const themeBtn=document.querySelector("#themeToggleMenu");if(themeBtn)themeBtn.textContent=document.body.classList.contains("dark-theme")?"☀️ Switch to light theme":"🌙 Switch to dark theme"}
 function currentSubmissions(){return readLocal("skillspaceDemoSubmissions",[])}
 function renderAdmin(){const u=user();if(!u||u.role!=="admin")return;document.querySelector("#adminSupportEmail").value=readLocal("skillspaceSupportEmail","");document.querySelector("#adminJobList").innerHTML=jobs.map((j,i)=>`<div class="admin-list-item"><div><b>${escapeHtml(j.title)}</b><div class="tiny muted">${escapeHtml(j.cat)} · ${moneyPair(j.budget)} · ${escapeHtml(j.accessTier)} minimum</div></div><button class="btn outline small" data-admin-remove-job="${i}">Remove</button></div>`).join("")||"<p class='muted'>No tasks yet.</p>";document.querySelector("#adminCourseList").innerHTML=courses.map(c=>`<div class="admin-list-item"><div><b>${escapeHtml(c.title)}</b><div class="tiny muted">${escapeHtml(c.category)} · ${c.lessons.length} topics</div></div><span class="tag">Academy</span></div>`).join("");const subs=currentSubmissions();document.querySelector("#adminSubmissionList").innerHTML=subs.length?subs.map((x,i)=>`<div class="admin-list-item"><div><b>${escapeHtml(x.task||"Task submission")}</b><div class="tiny muted">${escapeHtml(x.clientName||x.email||"Member")} · ${escapeHtml(x.fileName||"No server file")} · ${new Date(x.submittedAt||Date.now()).toLocaleString()}</div><span class="status-pill ${x.status==="Approved"?"status-approved":x.status==="Rejected"?"status-rejected":""}">${escapeHtml(x.status||"Pending review")}</span></div><div class="admin-actions"><button class="btn primary small" data-submission-action="approve" data-submission-index="${i}">Approve</button><button class="btn outline small" data-submission-action="reject" data-submission-index="${i}">Reject</button></div></div>`).join(""):"<p class='muted'>No task submissions yet.</p>";const clients=readLocal("skillspaceDemoClients",[]);document.querySelector("#adminClientList").innerHTML=clients.length?`<div style="overflow:auto"><table class="table"><thead><tr><th>Client</th><th>Plan</th><th>Referred by</th><th>Client referral code</th><th>Submissions</th><th>Approved</th><th>Rejected</th></tr></thead><tbody>${clients.map(c=>{const own=subs.filter(x=>(x.email||"").toLowerCase()===c.email.toLowerCase());const ref=clients.find(r=>r.email===(c.referredByEmail||"").toLowerCase())||null;return `<tr><td>${escapeHtml(c.name)}<br><span class="tiny muted">${escapeHtml(c.email)}</span></td><td>${escapeHtml(c.plan||"Free")}</td><td>${ref?escapeHtml(ref.name)+"<br><span class=\"tiny muted\">"+escapeHtml(ref.email)+"</span>":(c.referredByCode?"Code: "+escapeHtml(c.referredByCode):"Direct / unknown")}</td><td><b>${escapeHtml(c.referralCode||"Not assigned")}</b></td><td>${own.length}</td><td>${own.filter(x=>x.status==="Approved").length}</td><td>${own.filter(x=>x.status==="Rejected").length}</td></tr>`}).join("")}</tbody></table></div>`:"<p class='muted'>No client records have been collected in this browser yet.</p>";const payments=readLocal("skillspacePaymentRequests",[]);document.querySelector("#adminPaymentList").innerHTML=payments.length?payments.map((p,i)=>`<div class="admin-list-item"><div><b>${escapeHtml(p.plan)} membership · $${Number(p.amountUSD||0).toFixed(2)}</b><div class="tiny muted">${escapeHtml(p.email||"Unknown client")} · ${escapeHtml(p.phone||"")} · ${new Date(p.createdAt||Date.now()).toLocaleString()}</div><div class="tiny muted">Referral: ${escapeHtml(p.referrerEmail||p.referralCode||"None")}</div><span class="status-pill ${p.status==="Paid"?"status-approved":p.status==="Rejected"?"status-rejected":""}">${escapeHtml(p.status||"Pending verification")}</span></div><div class="admin-actions">${p.status==="Pending verification"||p.status==="pending"?`<button class="btn primary small" data-payment-action="paid" data-payment-index="${i}">Verify paid</button><button class="btn outline small" data-payment-action="reject" data-payment-index="${i}">Reject</button>`:""}</div></div>`).join(""):"<p class='muted'>No membership payment requests yet.</p>"}
 function usedTasksKey(){const u=user();return "skillspaceUsedTasks_"+(u&&u.email?u.email.toLowerCase():"guest")}
@@ -519,7 +519,18 @@ function render(){const logged=!!user();document.querySelector("#homeJobs").inne
 function notify(m){let t=document.querySelector("#toast");t.textContent=m;t.style.display="block";clearTimeout(window.tt);window.tt=setTimeout(()=>t.style.display="none",3600)}
 let previousPage="home";
 function ensureBackButton(pageName){if(pageName==="home")return;const page=document.querySelector("#p-"+pageName);if(!page)return;let wrap=page.querySelector(":scope > .page-back-wrap");if(!wrap){const existing=[...page.querySelectorAll("button[data-go]")].find(b=>/back/i.test(b.textContent));if(existing)return;wrap=document.createElement("div");wrap.className="page-back-wrap wrap";const btn=document.createElement("button");btn.type="button";btn.className="btn page-back small";btn.textContent="← Back";wrap.appendChild(btn);page.insertBefore(wrap,page.firstChild)}const btn=wrap.querySelector("button");btn.dataset.go=previousPage&&previousPage!==pageName?previousPage:"home"}
-function go(n){let allowed=["home","jobs","task","academy","marketplace","service","pricing","payment","signup","login","forgot-password","reset-password","dashboard","referrals","earnings","profile","terms","privacy","access","admin","support"];if(!allowed.includes(n))n="home";const u=user();if(u&&(n==="signup"||n==="login")){n="dashboard"}if(["dashboard","task","service","referrals","earnings","profile"].includes(n)&&!u){showAccessGate("Member access","Create an account or log in to access member features.","Free",true);return}if(n==="academy"&&!u){showAccessGate("SKILLSPACE Academy","Create an account or log in to browse Academy courses. Premium membership unlocks the full learning materials.","Premium",true);return}if(n==="admin"&&(!u||u.role!=="admin")){notify("Admin access is restricted to authorized administrators.");n=u?"dashboard":"login"}const current=document.querySelector(".page.active");const currentName=current?current.id.replace("p-",""):"home";if(currentName!==n)previousPage=currentName;ensureBackButton(n);document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.querySelector("#p-"+n).classList.add("active");document.querySelector("#links").classList.remove("open");document.querySelector("#menu").setAttribute("aria-expanded","false");window.scrollTo(0,0);history.replaceState(null,"","#"+n);if(n==="dashboard")updateDash();if(n==="profile"){
+function go(n){let allowed=["home","jobs","task","academy","marketplace","service","pricing","payment","signup","login","forgot-password","reset-password","dashboard","referrals","earnings","profile","terms","privacy","access","admin","support"];if(!allowed.includes(n))n="home";const u=user();if(u&&(n==="signup"||n==="login")){n="dashboard"}if(["dashboard","task","service","referrals","earnings","profile"].includes(n)&&!u){showAccessGate("Member access","Create an account or log in to access member features.","Free",true);return}if(n==="academy"&&!u){showAccessGate("SKILLSPACE Academy","Create an account or log in to browse Academy courses. Premium membership unlocks the full learning materials.","Premium",true);return}if(n==="admin"&&(!u||u.role!=="admin")){
+  if(!u){notify("Please log in with your administrator account first.");n="login";}
+  else if(typeof window.skillspaceEnsureAdminAccess==="function"){
+    // A cached member role can be stale. Re-check the current Supabase session and
+    // database authorization before denying the Admin Console.
+    window.skillspaceEnsureAdminAccess().then(allowed=>{
+      if(allowed) go("admin");
+      else notify("Supabase did not confirm administrator access. Open the browser console and check window.skillspaceAdminAuthDebug for the reason.");
+    }).catch(err=>{console.error("Admin access check failed:",err);notify("Could not verify administrator access. Please refresh and try again.");});
+    return;
+  } else {notify("Admin access is restricted to authorized administrators.");n="dashboard";}
+}const current=document.querySelector(".page.active");const currentName=current?current.id.replace("p-",""):"home";if(currentName!==n)previousPage=currentName;ensureBackButton(n);document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.querySelector("#p-"+n).classList.add("active");document.querySelector("#links").classList.remove("open");document.querySelector("#menu").setAttribute("aria-expanded","false");window.scrollTo(0,0);history.replaceState(null,"","#"+n);if(n==="dashboard")updateDash();if(n==="profile"){
   fillProfile();
   refreshReferralUI();
 
@@ -1259,14 +1270,25 @@ window.skillspaceHydrateMember = async function(authUser, options = {}) {
   }
 
   let isSuperAdmin = false;
+  let isAdmin = false;
   let adminCheckMessage = "";
+  const rpcBoolean = value => value === true || value === "true" || value?.is_super_admin === true || value?.is_admin === true ||
+    (Array.isArray(value) && value.some(row => row === true || row?.is_super_admin === true || row?.is_admin === true));
   try {
     const { data, error } = await client.rpc("is_super_admin");
     if (error) adminCheckMessage = error.message || "Super Admin RPC check failed";
-    else isSuperAdmin = data === true || data?.is_super_admin === true ||
-      (Array.isArray(data) && data.some(row => row === true || row?.is_super_admin === true));
+    else isSuperAdmin = rpcBoolean(data);
   } catch (err) {
     adminCheckMessage = err?.message || String(err);
+  }
+  // The project also exposes is_admin(); check it explicitly instead of relying
+  // only on the profile row or the super-admin-only function.
+  try {
+    const { data, error } = await client.rpc("is_admin");
+    if (error) { if (!adminCheckMessage) adminCheckMessage = error.message || "Admin RPC check failed"; }
+    else isAdmin = rpcBoolean(data);
+  } catch (err) {
+    if (!adminCheckMessage) adminCheckMessage = err?.message || String(err);
   }
   if (!isSuperAdmin) {
     try {
@@ -1290,7 +1312,7 @@ window.skillspaceHydrateMember = async function(authUser, options = {}) {
     referralCode: profile?.referral_code || metadata.referral_code || "",
     referredByCode: profile?.referred_by_code || metadata.referred_by_code || "",
     plan: profile?.membership_tier || profile?.plan || "Free",
-    role: (isSuperAdmin || profileIsAdmin) ? "admin" : (profile?.role || "user")
+    role: (isSuperAdmin || isAdmin || profileIsAdmin) ? "admin" : (profile?.role || "user")
   };
   window.skillspaceAdminAuthDebug = {
     userId: authUser.id,
@@ -1298,6 +1320,7 @@ window.skillspaceHydrateMember = async function(authUser, options = {}) {
     profileError: profileError?.message || null,
     profileRole: profile?.role || null,
     isSuperAdmin,
+    isAdmin,
     adminCheckMessage
   };
   localStorage.setItem("skillspaceDemoUser", JSON.stringify(member));
@@ -1308,6 +1331,70 @@ window.skillspaceHydrateMember = async function(authUser, options = {}) {
     go(target);
   }
   return member;
+};
+
+// On-demand Admin Console authorization. This re-checks the live Supabase
+// session and all existing authorization sources instead of trusting localStorage.
+window.skillspaceEnsureAdminAccess = async function() {
+  const client = window.supabaseClient;
+  if (!client) return false;
+  const debug = { userId: null, profileLoaded: false, profileRole: null, isSuperAdmin: false, isAdmin: false, superAdminTableMatch: false, adminCheckMessage: "" };
+  try {
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    if (sessionError) throw sessionError;
+    const authUser = sessionData?.session?.user;
+    if (!authUser) { debug.adminCheckMessage = "No active Supabase session"; window.skillspaceAdminAuthDebug = debug; return false; }
+    debug.userId = authUser.id;
+    let profile = null;
+    try {
+      const { data, error } = await client.from("profiles").select("*").eq("id", authUser.id).maybeSingle();
+      if (error) debug.adminCheckMessage = error.message || "Profile role query failed";
+      else { profile = data; debug.profileLoaded = !!data; debug.profileRole = data?.role || null; }
+    } catch (err) { debug.adminCheckMessage = err?.message || String(err); }
+    const boolResult = value => value === true || value === "true" || value?.is_super_admin === true || value?.is_admin === true || (Array.isArray(value) && value.some(row => row === true || row?.is_super_admin === true || row?.is_admin === true));
+    for (const fn of ["is_super_admin", "is_admin"]) {
+      try {
+        const { data, error } = await client.rpc(fn);
+        if (error) { if (!debug.adminCheckMessage) debug.adminCheckMessage = fn + ": " + error.message; }
+        else if (boolResult(data)) { if (fn === "is_super_admin") debug.isSuperAdmin = true; else debug.isAdmin = true; }
+      } catch (err) { if (!debug.adminCheckMessage) debug.adminCheckMessage = fn + ": " + (err?.message || String(err)); }
+    }
+    if (!debug.isSuperAdmin) {
+      try {
+        const { data, error } = await client.from("super_admins").select("user_id").eq("user_id", authUser.id).maybeSingle();
+        if (!error && data?.user_id === authUser.id) debug.superAdminTableMatch = true;
+        else if (error && !debug.adminCheckMessage) debug.adminCheckMessage = "super_admins: " + error.message;
+      } catch (err) { if (!debug.adminCheckMessage) debug.adminCheckMessage = err?.message || String(err); }
+    }
+    const role = String(profile?.role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+    const profileAdmin = ["admin", "super_admin", "administrator"].includes(role);
+    const allowed = debug.isSuperAdmin || debug.isAdmin || debug.superAdminTableMatch || profileAdmin;
+    debug.profileIsAdmin = profileAdmin;
+    debug.allowed = allowed;
+    window.skillspaceAdminAuthDebug = debug;
+    const old = user() || {};
+    const meta = authUser.user_metadata || {};
+    const member = {
+      ...old, id: authUser.id, email: authUser.email || old.email || "",
+      name: profile?.full_name || profile?.name || old.name || meta.full_name || meta.name || (authUser.email || "member").split("@")[0],
+      country: profile?.country || old.country || meta.country || "",
+      skill: profile?.skill || profile?.primary_skill || old.skill || meta.skill || "",
+      withdrawalPhone: profile?.withdrawal_phone || old.withdrawalPhone || meta.withdrawal_phone || "",
+      referralCode: profile?.referral_code || old.referralCode || meta.referral_code || "",
+      referredByCode: profile?.referred_by_code || old.referredByCode || meta.referred_by_code || "",
+      plan: profile?.membership_tier || profile?.plan || old.plan || "Free",
+      role: allowed ? "admin" : (profile?.role || "user")
+    };
+    localStorage.setItem("skillspaceDemoUser", JSON.stringify(member));
+    if (typeof render === "function") render();
+    if (typeof syncUI === "function") syncUI();
+    return allowed;
+  } catch (err) {
+    debug.adminCheckMessage = err?.message || String(err);
+    window.skillspaceAdminAuthDebug = debug;
+    console.error("Live Admin Console authorization check failed:", err);
+    return false;
+  }
 };
 
 // Keep the UI synchronized with Supabase auth changes. Defer work outside the
@@ -1351,11 +1438,10 @@ window.supabaseClient.auth.onAuthStateChange((event, session) => {
     }
     const member = await window.skillspaceHydrateMember(session.user, { navigate: false });
     const requested = location.hash.replace(/^#/, "");
-    if (requested === "admin" && member.role !== "admin") {
-      notify("Admin access is restricted to authorized administrators.");
-      go("dashboard");
-    } else if (requested === "admin" && member.role === "admin") {
-      go("admin");
+    if (requested === "admin") {
+      const allowed = member.role === "admin" || await window.skillspaceEnsureAdminAccess();
+      if (allowed) go("admin");
+      else { notify("Supabase did not confirm administrator access. Check window.skillspaceAdminAuthDebug in the browser console."); go("dashboard"); }
     } else if (typeof fillProfile === "function") {
       fillProfile();
     }
