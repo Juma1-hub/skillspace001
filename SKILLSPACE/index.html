@@ -1699,4 +1699,63 @@ window.supabaseClient.auth.onAuthStateChange((event, session) => {
     } catch (sessionErr) { console.error("Could not recover session display:", sessionErr); }
   }
 })();
+</script>
+<!-- Live Supabase-backed admin KPI refresh. Keeps existing auth and RLS policies unchanged. -->
+<script>
+(function () {
+  const client = window.supabaseClient;
+  if (!client) return;
+  const money = value => "$" + (Number(value || 0)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const put = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value; };
+  async function refreshLiveAdminMetrics() {
+    try {
+      const { data: sessionData } = await client.auth.getSession();
+      if (!sessionData?.session?.user) return;
+      const { data: profile, error: profileError } = await client.from("profiles").select("role").eq("id", sessionData.session.user.id).maybeSingle();
+      if (profileError || String(profile?.role || "").toLowerCase() !== "admin") return;
+
+      const [profilesResult, tasksResult, paymentsResult, submissionsResult] = await Promise.all([
+        client.from("profiles").select("id,role"),
+        client.from("tasks").select("id,status,price_usd,category"),
+        client.from("payments").select("id,amount_usd,verified_at,status"),
+        client.from("task_submissions").select("id,task_id,status")
+      ]);
+      const results = [profilesResult, tasksResult, paymentsResult, submissionsResult];
+      const names = ["profiles", "tasks", "payments", "task_submissions"];
+      results.forEach((r, i) => { if (r.error) console.warn("Live admin KPI query failed for " + names[i] + ":", r.error.message); });
+
+      if (!profilesResult.error) {
+        const profiles = profilesResult.data || [];
+        put("adminMetricUsers", profiles.length.toLocaleString());
+        put("adminMetricClients", profiles.filter(p => String(p.role || "").toLowerCase() === "member").length.toLocaleString());
+      }
+      if (!tasksResult.error) put("adminMetricTasks", (tasksResult.data || []).length.toLocaleString());
+      if (!paymentsResult.error) {
+        const payments = paymentsResult.data || [];
+        put("adminMetricPayments", payments.length.toLocaleString());
+        // verified_at is the schema's explicit verification timestamp; don't infer revenue from status labels.
+        const verifiedRevenue = payments.filter(p => !!p.verified_at).reduce((sum, p) => sum + (Number(p.amount_usd) || 0), 0);
+        put("adminMetricRevenue", money(verifiedRevenue));
+      }
+      if (!tasksResult.error && !submissionsResult.error) {
+        const taskPrices = new Map((tasksResult.data || []).map(t => [String(t.id), Number(t.price_usd) || 0]));
+        const approvedValue = (submissionsResult.data || []).filter(s => String(s.status || "").toLowerCase() === "approved")
+          .reduce((sum, s) => sum + (taskPrices.get(String(s.task_id)) || 0), 0);
+        put("adminMetricUserEarnings", money(approvedValue));
+        const earningsLabel = document.querySelector("#adminMetricUserEarnings")?.parentElement?.querySelector("em");
+        if (earningsLabel) earningsLabel.textContent = "Estimated value of approved tasks";
+      }
+    } catch (error) {
+      console.warn("Live admin dashboard metrics could not be refreshed:", error);
+    }
+  }
+  window.skillspaceRefreshLiveAdminMetrics = refreshLiveAdminMetrics;
+  client.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") setTimeout(refreshLiveAdminMetrics, 0);
+  });
+  window.addEventListener("hashchange", () => {
+    if (location.hash.replace(/^#/, "") === "admin") setTimeout(refreshLiveAdminMetrics, 150);
+  });
+  setTimeout(refreshLiveAdminMetrics, 700);
+})();
 </script></body></html>
