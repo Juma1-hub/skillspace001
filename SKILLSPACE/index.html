@@ -487,14 +487,19 @@ function taskLimit(plan=currentPlan()){return ({Free:5,Basic:10,Standard:20,Prem
 function nextPlan(plan){return ({Free:"Basic",Basic:"Standard",Standard:"Premium",Premium:"Premium"})[plan]||"Basic"}
 function planPrice(plan){const p=plans.find(x=>x[0]===plan);return p?p[1]:"$0.00"}
 function planCanUseTask(task,plan=currentPlan()){return (planRanks[plan]??0)>=(planRanks[task.accessTier||"Premium"]??3)}
-function profileCompletion(u=user()){if(!u)return 0;const fields=[u.name,u.email,u.country,u.skill];const complete=fields.filter(v=>String(v||"").trim().length>0).length;return Math.round(complete/fields.length*100)}
+function profileCompletion(u=user()){
+  if(!u)return 0;
+  const fields=[u.name||u.full_name||u.fullName,u.email,u.country,u.skill||u.primary_skill];
+  const complete=fields.filter(v=>String(v||"").trim().length>0).length;
+  return Math.round(complete/fields.length*100);
+}
 function serviceMinPlan(service){const amount=numericPrice(service&&service[4]);return amount<=5?"Free":amount<=8?"Basic":amount<=12?"Standard":"Premium"}
 function showAccessGate(title,message,requiredPlan="Premium",guest=false){document.querySelector("#accessTitle").textContent=guest?"Create an account to continue":"Upgrade to access: "+title;document.querySelector("#accessMessage").textContent=message;document.querySelector("#accessUpgrade").textContent=guest?"VIEW MEMBERSHIP PLANS →":"UPGRADE NOW →";document.querySelector("#accessLogin").classList.toggle("hidden",!guest);document.querySelector("#accessSignup").classList.toggle("hidden",!guest);document.querySelector("#accessBack").classList.toggle("hidden",guest);document.querySelector("#accessUpgrade").dataset.go="pricing";document.querySelector("#accessUpgrade").onclick=null;go("access");}
 function requireMemberForContent(kind,title){if(!user()){showAccessGate(title,"Create an account or log in to view "+kind+" details and use member features.","Free",true);return false}return true}
 function serviceCanUse(service,plan=currentPlan()){return (planRanks[plan]??0)>=(planRanks[serviceMinPlan(service)]??0)}
 function jobCategoriesMarkup(){const cats=[...new Set(jobs.map(j=>j.cat))];return cats.map(cat=>`<article class="card category-card" data-job-category="${cat.replace(/"/g,"&quot;")}"><div class="feature-icon">💼</div><h3>${cat}</h3><p>${jobs.filter(j=>j.cat===cat).length} work opportunities in this category</p><span class="feature-action">Sign in to view tasks →</span></article>`).join("")}
 function serviceCategoriesMarkup(){const cats=[...new Set(services.map(s=>s[1]))];return cats.map(cat=>`<article class="card category-card" data-service-category="${cat.replace(/"/g,"&quot;")}"><div class="feature-icon">🛍️</div><h3>${cat}</h3><p>${services.filter(s=>s[1]===cat).length} service options in this category</p><span class="feature-action">Sign in to view services →</span></article>`).join("")}
-function syncUI(){const u=user();const logged=!!u;document.querySelectorAll('[data-go="signup"]').forEach(el=>el.classList.toggle("hidden",logged));document.querySelectorAll('[data-go="login"]').forEach(el=>el.classList.toggle("hidden",logged));const signupPage=document.querySelector("#p-signup");if(signupPage)signupPage.classList.toggle("member-hidden",logged);document.querySelector("#quickDashboard").classList.toggle("hidden",!logged);document.querySelector("#homeWorkspacePreview").classList.toggle("hidden",!logged);document.querySelector("#guestHeroCard").classList.toggle("hidden",logged);document.querySelector("#headerLogin").classList.toggle("hidden",logged);document.querySelector("#headerSignup").classList.toggle("hidden",logged);const headerLogout=document.querySelector("#headerLogout");if(headerLogout)headerLogout.classList.toggle("hidden",!logged);const homeSignup=document.querySelector("#homeGetStartedFree");if(homeSignup)homeSignup.classList.toggle("hidden",logged);document.querySelector("#menuLogin").classList.toggle("hidden",logged);document.querySelector("#menuSignup").classList.toggle("hidden",logged);document.querySelector("#menuLogout").classList.toggle("hidden",!logged);document.querySelector("#menuAdmin").classList.toggle("hidden",!(u&&u.role==="admin"));const quickAdmin=document.querySelector("#quickAdmin");if(quickAdmin)quickAdmin.classList.toggle("hidden",!(u&&u.role==="admin"));document.querySelector("#homeProfileCompletion").textContent=profileCompletion(u)+"%";const email=readLocal("skillspaceSupportEmail","");const foot=document.querySelector("#footerSupportContact");if(email){foot.innerHTML=`<a class="btn primary" href="mailto:${email.replace(/"/g,"&quot;")}">Email support →</a><div class="tiny" style="margin-top:6px;color:#b8c5df">${email.replace(/</g,"&lt;")}</div>`}else{foot.innerHTML='<button class="btn primary" data-go="support">Contact support →</button>'}const supportDisplay=document.querySelector("#supportEmailDisplay");if(supportDisplay)supportDisplay.textContent=email?"Support email: "+email:"Use the form below to send a support request.";const themeBtn=document.querySelector("#themeToggleMenu");if(themeBtn)themeBtn.textContent=document.body.classList.contains("dark-theme")?"☀️ Switch to light theme":"🌙 Switch to dark theme"}
+function syncUI(){const u=user();const logged=!!u;document.querySelectorAll('[data-go="signup"]').forEach(el=>el.classList.toggle("hidden",logged));document.querySelectorAll('[data-go="login"]').forEach(el=>el.classList.toggle("hidden",logged));const signupPage=document.querySelector("#p-signup");if(signupPage)signupPage.classList.toggle("member-hidden",logged);const quickDashboard=document.querySelector("#quickDashboard");if(quickDashboard)quickDashboard.classList.toggle("hidden",!logged);const workspace=document.querySelector("#homeWorkspacePreview");if(workspace)workspace.classList.toggle("hidden",!logged);const guestHero=document.querySelector("#guestHeroCard");if(guestHero)guestHero.classList.toggle("hidden",logged);const headerLogin=document.querySelector("#headerLogin");if(headerLogin)headerLogin.classList.toggle("hidden",logged);const headerSignup=document.querySelector("#headerSignup");if(headerSignup)headerSignup.classList.toggle("hidden",logged);const headerLogout=document.querySelector("#headerLogout");if(headerLogout)headerLogout.classList.toggle("hidden",!logged);const homeSignup=document.querySelector("#homeGetStartedFree");if(homeSignup)homeSignup.classList.toggle("hidden",logged);const menuLogin=document.querySelector("#menuLogin");if(menuLogin)menuLogin.classList.toggle("hidden",logged);const menuSignup=document.querySelector("#menuSignup");if(menuSignup)menuSignup.classList.toggle("hidden",logged);const menuLogout=document.querySelector("#menuLogout");if(menuLogout)menuLogout.classList.toggle("hidden",!logged);const menuAdmin=document.querySelector("#menuAdmin");if(menuAdmin)menuAdmin.classList.toggle("hidden",!(u&&u.role==="admin"));const quickAdmin=document.querySelector("#quickAdmin");if(quickAdmin)quickAdmin.classList.toggle("hidden",!(u&&u.role==="admin"));const completion=profileCompletion(u);const homeProgress=document.querySelector("#homeProfileCompletion");if(homeProgress)homeProgress.textContent=completion+"%";const progressBar=document.querySelector(".ew-mini-bar i");if(progressBar)progressBar.style.width=completion+"%";const email=readLocal("skillspaceSupportEmail","");const foot=document.querySelector("#footerSupportContact");if(email){foot.innerHTML=`<a class="btn primary" href="mailto:${email.replace(/"/g,"&quot;")}">Email support →</a><div class="tiny" style="margin-top:6px;color:#b8c5df">${email.replace(/</g,"&lt;")}</div>`}else{foot.innerHTML='<button class="btn primary" data-go="support">Contact support →</button>'}const supportDisplay=document.querySelector("#supportEmailDisplay");if(supportDisplay)supportDisplay.textContent=email?"Support email: "+email:"Use the form below to send a support request.";const themeBtn=document.querySelector("#themeToggleMenu");if(themeBtn)themeBtn.textContent=document.body.classList.contains("dark-theme")?"☀️ Switch to light theme":"🌙 Switch to dark theme"}
 function currentSubmissions(){return readLocal("skillspaceDemoSubmissions",[])}
 function renderAdmin(){const u=user();if(!u||u.role!=="admin")return;document.querySelector("#adminSupportEmail").value=readLocal("skillspaceSupportEmail","");document.querySelector("#adminJobList").innerHTML=jobs.map((j,i)=>`<div class="admin-list-item"><div><b>${escapeHtml(j.title)}</b><div class="tiny muted">${escapeHtml(j.cat)} · ${moneyPair(j.budget)} · ${escapeHtml(j.accessTier)} minimum</div></div><button class="btn outline small" data-admin-remove-job="${i}">Remove</button></div>`).join("")||"<p class='muted'>No tasks yet.</p>";document.querySelector("#adminCourseList").innerHTML=courses.map(c=>`<div class="admin-list-item"><div><b>${escapeHtml(c.title)}</b><div class="tiny muted">${escapeHtml(c.category)} · ${c.lessons.length} topics</div></div><span class="tag">Academy</span></div>`).join("");const subs=currentSubmissions();document.querySelector("#adminSubmissionList").innerHTML=subs.length?subs.map((x,i)=>`<div class="admin-list-item"><div><b>${escapeHtml(x.task||"Task submission")}</b><div class="tiny muted">${escapeHtml(x.clientName||x.email||"Member")} · ${escapeHtml(x.fileName||"No server file")} · ${new Date(x.submittedAt||Date.now()).toLocaleString()}</div><span class="status-pill ${x.status==="Approved"?"status-approved":x.status==="Rejected"?"status-rejected":""}">${escapeHtml(x.status||"Pending review")}</span></div><div class="admin-actions"><button class="btn primary small" data-submission-action="approve" data-submission-index="${i}">Approve</button><button class="btn outline small" data-submission-action="reject" data-submission-index="${i}">Reject</button></div></div>`).join(""):"<p class='muted'>No task submissions yet.</p>";const clients=readLocal("skillspaceDemoClients",[]);document.querySelector("#adminClientList").innerHTML=clients.length?`<div style="overflow:auto"><table class="table"><thead><tr><th>Client</th><th>Plan</th><th>Referred by</th><th>Client referral code</th><th>Submissions</th><th>Approved</th><th>Rejected</th></tr></thead><tbody>${clients.map(c=>{const own=subs.filter(x=>(x.email||"").toLowerCase()===c.email.toLowerCase());const ref=clients.find(r=>r.email===(c.referredByEmail||"").toLowerCase())||null;return `<tr><td>${escapeHtml(c.name)}<br><span class="tiny muted">${escapeHtml(c.email)}</span></td><td>${escapeHtml(c.plan||"Free")}</td><td>${ref?escapeHtml(ref.name)+"<br><span class=\"tiny muted\">"+escapeHtml(ref.email)+"</span>":(c.referredByCode?"Code: "+escapeHtml(c.referredByCode):"Direct / unknown")}</td><td><b>${escapeHtml(c.referralCode||"Not assigned")}</b></td><td>${own.length}</td><td>${own.filter(x=>x.status==="Approved").length}</td><td>${own.filter(x=>x.status==="Rejected").length}</td></tr>`}).join("")}</tbody></table></div>`:"<p class='muted'>No client records have been collected in this browser yet.</p>";const payments=readLocal("skillspacePaymentRequests",[]);document.querySelector("#adminPaymentList").innerHTML=payments.length?payments.map((p,i)=>`<div class="admin-list-item"><div><b>${escapeHtml(p.plan)} membership · $${Number(p.amountUSD||0).toFixed(2)}</b><div class="tiny muted">${escapeHtml(p.email||"Unknown client")} · ${escapeHtml(p.phone||"")} · ${new Date(p.createdAt||Date.now()).toLocaleString()}</div><div class="tiny muted">Referral: ${escapeHtml(p.referrerEmail||p.referralCode||"None")}</div><span class="status-pill ${p.status==="Paid"?"status-approved":p.status==="Rejected"?"status-rejected":""}">${escapeHtml(p.status||"Pending verification")}</span></div><div class="admin-actions">${p.status==="Pending verification"||p.status==="pending"?`<button class="btn primary small" data-payment-action="paid" data-payment-index="${i}">Verify paid</button><button class="btn outline small" data-payment-action="reject" data-payment-index="${i}">Reject</button>`:""}</div></div>`).join(""):"<p class='muted'>No membership payment requests yet.</p>"}
 function usedTasksKey(){const u=user();return "skillspaceUsedTasks_"+(u&&u.email?u.email.toLowerCase():"guest")}
@@ -684,7 +689,8 @@ if (enteredCode) {
 };
 document.querySelector("#loginForm").onsubmit = async (e) => {
   e.preventDefault();
-  const button = e.submitter;
+  const form = e.currentTarget;
+  const button = e.submitter || form.querySelector('button[type="submit"]');
   if (button) button.disabled = true;
   try {
     const email = document.querySelector("#loginEmail").value.trim().toLowerCase();
@@ -694,74 +700,105 @@ document.querySelector("#loginForm").onsubmit = async (e) => {
       notify("Connection error. Please refresh the page and try again.");
       return;
     }
+
+    // Supabase Auth is the source of truth. Once it succeeds, immediately reflect
+    // the authenticated session in the UI; optional profile/admin lookups must not
+    // turn a successful login into a misleading failure message.
     const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) {
       console.error("Login failed:", error);
-      notify("Login failed. Check your email and password, then try again.");
+      notify(error.message || "Login failed. Check your email and password, then try again.");
       return;
     }
-    const authUser = data.user;
-    if (!authUser) {
+    if (!data?.user) {
       notify("Login could not be completed. Please try again.");
       return;
     }
-    let profile = null;
-    const { data: profileData, error: profileError } = await client
-      .from("profiles").select("*").eq("id", authUser.id).maybeSingle();
-    if (profileError) console.error("Profile loading failed:", profileError);
-    else profile = profileData;
 
-    // The server-side authorization check is important for Super Admin access.
-    let isSuperAdmin = false;
-    let adminCheckMessage = "";
-    try {
-      const { data: adminResult, error: adminError } = await client.rpc("is_super_admin");
-      if (adminError) {
-        adminCheckMessage = adminError.message || "RPC check failed";
-        console.warn("Super Admin RPC check failed:", adminCheckMessage);
-      } else {
-        isSuperAdmin = adminResult === true || adminResult?.is_super_admin === true ||
-          (Array.isArray(adminResult) && adminResult.some(row => row === true || row?.is_super_admin === true));
-      }
-    } catch (adminCheckError) {
-      adminCheckMessage = adminCheckError?.message || String(adminCheckError);
-      console.warn("Super Admin RPC check failed:", adminCheckError);
-    }
-    // Fallback lookup is still performed against Supabase; it never trusts a browser-only role.
-    if (!isSuperAdmin) {
-      try {
-        const { data: superAdminRow, error: superAdminTableError } = await client
-          .from("super_admins").select("user_id").eq("user_id", authUser.id).maybeSingle();
-        if (!superAdminTableError && superAdminRow?.user_id === authUser.id) isSuperAdmin = true;
-        else if (superAdminTableError) console.warn("Super Admin table fallback unavailable:", superAdminTableError.message);
-      } catch (fallbackError) {
-        console.warn("Super Admin table fallback failed:", fallbackError);
-      }
-    }
-    const profileRole = String(profile?.role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
-    const profileIsAdmin = ["admin", "super_admin", "administrator"].includes(profileRole);
-    const role = (isSuperAdmin || profileIsAdmin) ? "admin" : (profile?.role || "user");
-    window.skillspaceAdminAuthDebug = { userId: authUser.id, profileLoaded: !!profile, profileError: profileError?.message || null, profileRole: profile?.role || null, isSuperAdmin, adminCheckMessage };
-    const member = {
+    // Create a safe temporary display profile immediately, so the logout button,
+    // dashboard link and profile progress update even if profile lookup is slow.
+    const authUser = data.user;
+    const metadata = authUser.user_metadata || {};
+    const basicMember = {
       id: authUser.id,
       email: authUser.email || email,
-      name: profile?.full_name || authUser.user_metadata?.full_name || authUser.user_metadata?.name || (authUser.email || email).split("@")[0],
-      country: profile?.country || authUser.user_metadata?.country || "",
-      skill: profile?.skill || authUser.user_metadata?.skill || "",
-      withdrawalPhone: profile?.withdrawal_phone || authUser.user_metadata?.withdrawal_phone || "",
-      referralCode: profile?.referral_code || authUser.user_metadata?.referral_code || "",
-      referredByCode: profile?.referred_by_code || authUser.user_metadata?.referred_by_code || "",
-      plan: profile?.membership_tier || "Free",
-      role
+      name: metadata.full_name || metadata.name || (authUser.email || email).split("@")[0],
+      country: metadata.country || "",
+      skill: metadata.skill || "",
+      withdrawalPhone: metadata.withdrawal_phone || "",
+      referralCode: metadata.referral_code || "",
+      referredByCode: metadata.referred_by_code || "",
+      plan: "Free",
+      role: "user"
     };
-    localStorage.setItem("skillspaceDemoUser", JSON.stringify(member));
+    localStorage.setItem("skillspaceDemoUser", JSON.stringify(basicMember));
     render();
     syncUI();
+
+    // Enrich from Supabase without making a successful sign-in depend on optional
+    // profile columns, RPC availability, or table policies.
+    let member = basicMember;
+    try {
+      if (typeof window.skillspaceHydrateMember === "function") {
+        member = await window.skillspaceHydrateMember(authUser, { navigate: false });
+      } else {
+        const { data: profile, error: profileError } = await client
+          .from("profiles").select("*").eq("id", authUser.id).maybeSingle();
+        if (profileError) console.warn("Profile loading failed after login:", profileError.message);
+        if (profile) {
+          const profileRole = String(profile.role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+          member = {
+            ...basicMember,
+            name: profile.full_name || profile.name || basicMember.name,
+            country: profile.country || basicMember.country,
+            skill: profile.skill || basicMember.skill,
+            withdrawalPhone: profile.withdrawal_phone || basicMember.withdrawalPhone,
+            referralCode: profile.referral_code || basicMember.referralCode,
+            referredByCode: profile.referred_by_code || basicMember.referredByCode,
+            plan: profile.membership_tier || basicMember.plan,
+            role: ["admin", "super_admin", "administrator"].includes(profileRole) ? "admin" : "user"
+          };
+        }
+        localStorage.setItem("skillspaceDemoUser", JSON.stringify(member));
+        render();
+        syncUI();
+      }
+    } catch (enrichmentError) {
+      console.warn("Optional profile enrichment failed; keeping authenticated session:", enrichmentError);
+    }
+
+    // Route based on confirmed role, but never claim login itself failed just
+    // because an admin-check endpoint is unavailable.
+    const role = member?.role || user()?.role || "user";
     go(role === "admin" ? "admin" : "dashboard");
-    notify(role === "admin" ? "Welcome back. Administrator access confirmed." : "Signed in, but Supabase did not confirm administrator permissions. If this is your admin account, check the browser console for the Supabase profile/admin-check errors.");
+    notify(role === "admin" ? "Welcome back. Administrator access confirmed." : "You are signed in successfully.");
   } catch (err) {
     console.error("Unexpected login error:", err);
-    notify("Something went wrong. Please try logging in again.");
+    // If Supabase already established a session, preserve that fact and direct the
+    // member to the dashboard instead of displaying a false login-failure message.
+    try {
+      const client = window.supabaseClient;
+      const { data: sessionData } = client ? await client.auth.getSession() : { data: null };
+      if (sessionData?.session?.user) {
+        const authUser = sessionData.session.user;
+        const metadata = authUser.user_metadata || {};
+        const member = {
+          id: authUser.id, email: authUser.email || "",
+          name: metadata.full_name || metadata.name || (authUser.email || "member").split("@")[0],
+          country: metadata.country || "", skill: metadata.skill || "",
+          withdrawalPhone: metadata.withdrawal_phone || "", referralCode: metadata.referral_code || "",
+          referredByCode: metadata.referred_by_code || "", plan: "Free", role: "user"
+        };
+        localStorage.setItem("skillspaceDemoUser", JSON.stringify(member));
+        render(); syncUI(); go("dashboard");
+        notify("You are signed in. Some profile details could not be loaded; you can update them in My Profile.");
+      } else {
+        notify("We could not complete login. Please try again. If this continues, check your connection and Supabase settings.");
+      }
+    } catch (sessionCheckError) {
+      console.error("Session confirmation after login error:", sessionCheckError);
+      notify("We could not confirm the login result. Refresh the page and try again.");
+    }
   } finally {
     if (button) button.disabled = false;
   }
@@ -1203,31 +1240,141 @@ if (recoveryLaunch) {
 })();
 </script>
 <script>
-// Restore the Supabase-authenticated member on refresh and verify admin privileges server-side.
-(async function restoreSkillspaceSession(){
-  const client=window.supabaseClient;
-  if(!client)return;
-  try{
-    const {data:{session},error:sessionError}=await client.auth.getSession();
-    if(sessionError)throw sessionError;
-    if(!session){localStorage.removeItem("skillspaceDemoUser");if(typeof syncUI==="function")syncUI();if(location.hash.replace(/^#/,"")==="admin")go("login");return;}
-    const authUser=session.user;
-    const {data:profile,error:profileError}=await client.from("profiles").select("*").eq("id",authUser.id).maybeSingle();
-    if(profileError)console.warn("Profile refresh warning:",profileError.message);
-    let isSuperAdmin=false;
-    let adminCheckMessage="";
-    try{const {data,error}=await client.rpc("is_super_admin");if(error){adminCheckMessage=error.message||"RPC check failed";console.warn("Super Admin RPC check failed:",adminCheckMessage)}else isSuperAdmin=data===true||data?.is_super_admin===true||(Array.isArray(data)&&data.some(row=>row===true||row?.is_super_admin===true))}catch(err){adminCheckMessage=err?.message||String(err);console.warn("Super Admin RPC check failed:",err)}
-    if(!isSuperAdmin){try{const {data:superAdminRow,error:tableError}=await client.from("super_admins").select("user_id").eq("user_id",authUser.id).maybeSingle();if(!tableError&&superAdminRow?.user_id===authUser.id)isSuperAdmin=true;else if(tableError)console.warn("Super Admin table fallback unavailable:",tableError.message)}catch(err){console.warn("Super Admin table fallback failed:",err)}}
-    const profileRole=String(profile?.role||"").trim().toLowerCase().replace(/[\s-]+/g,"_");
-    const profileIsAdmin=["admin","super_admin","administrator"].includes(profileRole);
-    const member={id:authUser.id,email:authUser.email||"",name:profile?.full_name||authUser.user_metadata?.full_name||authUser.user_metadata?.name||(authUser.email||"member").split("@")[0],country:profile?.country||authUser.user_metadata?.country||"",skill:profile?.skill||authUser.user_metadata?.skill||"",withdrawalPhone:profile?.withdrawal_phone||authUser.user_metadata?.withdrawal_phone||"",referralCode:profile?.referral_code||authUser.user_metadata?.referral_code||"",referredByCode:profile?.referred_by_code||authUser.user_metadata?.referred_by_code||"",plan:profile?.membership_tier||"Free",role:(isSuperAdmin||profileIsAdmin)?"admin":(profile?.role||"user")};
-    window.skillspaceAdminAuthDebug={userId:authUser.id,profileLoaded:!!profile,profileError:profileError?.message||null,profileRole:profile?.role||null,isSuperAdmin,adminCheckMessage};
-    localStorage.setItem("skillspaceDemoUser",JSON.stringify(member));
-    if(typeof render==="function")render();if(typeof syncUI==="function")syncUI();
-    const requested=location.hash.replace(/^#/,"");
-    if(requested==="admin"&&member.role!=="admin"){notify("Admin access is restricted to authorized administrators.");go("dashboard");}
-    else if(requested==="admin"&&member.role==="admin"){go("admin");}
-    else if(typeof fillProfile==="function")fillProfile();
-  }catch(err){console.error("Session restore failed:",err)}
+// Shared Supabase session hydrator. Profile/admin lookups are best-effort and never
+// invalidate a session that Supabase Auth has already confirmed.
+window.skillspaceHydrateMember = async function(authUser, options = {}) {
+  const client = window.supabaseClient;
+  if (!client || !authUser) throw new Error("Supabase session user is unavailable.");
+  const metadata = authUser.user_metadata || {};
+  let profile = null;
+  let profileError = null;
+  try {
+    const result = await client.from("profiles").select("*").eq("id", authUser.id).maybeSingle();
+    profile = result.data || null;
+    profileError = result.error || null;
+    if (profileError) console.warn("Profile loading warning:", profileError.message);
+  } catch (err) {
+    profileError = err;
+    console.warn("Profile loading warning:", err);
+  }
+
+  let isSuperAdmin = false;
+  let adminCheckMessage = "";
+  try {
+    const { data, error } = await client.rpc("is_super_admin");
+    if (error) adminCheckMessage = error.message || "Super Admin RPC check failed";
+    else isSuperAdmin = data === true || data?.is_super_admin === true ||
+      (Array.isArray(data) && data.some(row => row === true || row?.is_super_admin === true));
+  } catch (err) {
+    adminCheckMessage = err?.message || String(err);
+  }
+  if (!isSuperAdmin) {
+    try {
+      const { data, error } = await client.from("super_admins").select("user_id").eq("user_id", authUser.id).maybeSingle();
+      if (!error && data?.user_id === authUser.id) isSuperAdmin = true;
+      else if (error && !adminCheckMessage) adminCheckMessage = error.message || "Super Admin table check failed";
+    } catch (err) {
+      if (!adminCheckMessage) adminCheckMessage = err?.message || String(err);
+    }
+  }
+
+  const profileRole = String(profile?.role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const profileIsAdmin = ["admin", "super_admin", "administrator"].includes(profileRole);
+  const member = {
+    id: authUser.id,
+    email: authUser.email || "",
+    name: profile?.full_name || profile?.name || metadata.full_name || metadata.name || (authUser.email || "member").split("@")[0],
+    country: profile?.country || metadata.country || "",
+    skill: profile?.skill || profile?.primary_skill || metadata.skill || metadata.primary_skill || "",
+    withdrawalPhone: profile?.withdrawal_phone || metadata.withdrawal_phone || "",
+    referralCode: profile?.referral_code || metadata.referral_code || "",
+    referredByCode: profile?.referred_by_code || metadata.referred_by_code || "",
+    plan: profile?.membership_tier || profile?.plan || "Free",
+    role: (isSuperAdmin || profileIsAdmin) ? "admin" : (profile?.role || "user")
+  };
+  window.skillspaceAdminAuthDebug = {
+    userId: authUser.id,
+    profileLoaded: !!profile,
+    profileError: profileError?.message || null,
+    profileRole: profile?.role || null,
+    isSuperAdmin,
+    adminCheckMessage
+  };
+  localStorage.setItem("skillspaceDemoUser", JSON.stringify(member));
+  if (typeof render === "function") render();
+  if (typeof syncUI === "function") syncUI();
+  if (options.navigate) {
+    const target = member.role === "admin" ? "admin" : "dashboard";
+    go(target);
+  }
+  return member;
+};
+
+// Keep the UI synchronized with Supabase auth changes. Defer work outside the
+// auth callback so database queries cannot block Supabase's internal auth lock.
+window.supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_IN" && session?.user) {
+    setTimeout(() => {
+      window.skillspaceHydrateMember(session.user, { navigate: false }).catch(err => {
+        console.warn("Could not hydrate signed-in member:", err);
+        const metadata = session.user.user_metadata || {};
+        const fallback = {
+          id: session.user.id, email: session.user.email || "",
+          name: metadata.full_name || metadata.name || (session.user.email || "member").split("@")[0],
+          country: metadata.country || "", skill: metadata.skill || "",
+          withdrawalPhone: metadata.withdrawal_phone || "", referralCode: metadata.referral_code || "",
+          referredByCode: metadata.referred_by_code || "", plan: "Free", role: "user"
+        };
+        localStorage.setItem("skillspaceDemoUser", JSON.stringify(fallback));
+        if (typeof render === "function") render();
+        if (typeof syncUI === "function") syncUI();
+      });
+    }, 0);
+  } else if (event === "SIGNED_OUT") {
+    localStorage.removeItem("skillspaceDemoUser");
+    if (typeof syncUI === "function") syncUI();
+  }
+});
+
+(async function restoreSkillspaceSession() {
+  const client = window.supabaseClient;
+  if (!client) return;
+  try {
+    const { data, error } = await client.auth.getSession();
+    if (error) throw error;
+    const session = data?.session;
+    if (!session) {
+      localStorage.removeItem("skillspaceDemoUser");
+      if (typeof syncUI === "function") syncUI();
+      if (location.hash.replace(/^#/, "") === "admin") go("login");
+      return;
+    }
+    const member = await window.skillspaceHydrateMember(session.user, { navigate: false });
+    const requested = location.hash.replace(/^#/, "");
+    if (requested === "admin" && member.role !== "admin") {
+      notify("Admin access is restricted to authorized administrators.");
+      go("dashboard");
+    } else if (requested === "admin" && member.role === "admin") {
+      go("admin");
+    } else if (typeof fillProfile === "function") {
+      fillProfile();
+    }
+  } catch (err) {
+    console.error("Session restore failed:", err);
+    // Do not erase a potentially valid auth session just because profile hydration failed.
+    try {
+      const { data } = await client.auth.getSession();
+      if (data?.session?.user) {
+        const u = data.session.user;
+        const meta = u.user_metadata || {};
+        localStorage.setItem("skillspaceDemoUser", JSON.stringify({
+          id: u.id, email: u.email || "", name: meta.full_name || meta.name || (u.email || "member").split("@")[0],
+          country: meta.country || "", skill: meta.skill || "", plan: "Free", role: "user"
+        }));
+        if (typeof render === "function") render();
+        if (typeof syncUI === "function") syncUI();
+      }
+    } catch (sessionErr) { console.error("Could not recover session display:", sessionErr); }
+  }
 })();
 </script></body></html>
