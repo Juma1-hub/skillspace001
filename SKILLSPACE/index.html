@@ -1261,7 +1261,104 @@ document.querySelector("#submissionForm").onsubmit=async e=>{
  }catch(err){console.error('Task submission notification failed:',err);const raw=String(err?.message||'');let message=raw||'Your notification could not be saved. Please try again.';if(/row-level security|permission denied|not allowed|403/i.test(message))message='Supabase blocked the notification because of database permissions. Ask the administrator to apply the metadata-only task-submission migration.';else if(/column .*task_title|schema cache/i.test(message))message='The database needs the metadata-only task-submission migration before this version can save notifications.';showSubmissionMessage('Submission failed: '+message+' Your task has not been marked as submitted.');
  }finally{if(submitBtn.textContent!=='✓ Submitted — awaiting review'){submitBtn.textContent=originalText;submitBtn.disabled=false;}}
 };
-document.querySelector("#adminJobForm").onsubmit=e=>{e.preventDefault();const title=document.querySelector("#adminJobTitle").value.trim();if(jobs.some(j=>j.title.toLowerCase()===title.toLowerCase())){notify("A task with that title already exists.");return}const budget=Number(document.querySelector("#adminJobBudget").value);if(!Number.isFinite(budget)||budget<=0){notify("Enter a valid task budget.");return}jobs.push({title,cat:document.querySelector("#adminJobCategory").value.trim(),desc:document.querySelector("#adminJobDescription").value.trim(),budget:"$"+budget.toFixed(2),accessTier:document.querySelector("#adminJobTier").value,deadline:document.querySelector("#adminJobDeadline").value.trim()||"2 days",instructions:document.querySelector("#adminJobInstructions").value.trim(),requirements:["Follow the task instructions.","Check the finished work for accuracy.","Submit the required deliverable before the deadline."]});saveManagedJobs();e.target.reset();render();renderAdmin();notify("Task added to the local catalogue.")};
+```javascript
+document.querySelector("#adminJobForm").onsubmit = async e => {
+  e.preventDefault();
+
+  if (!user() || user().role !== "admin") {
+    notify("Admin access required.");
+    return;
+  }
+
+  const form = e.target;
+  const title = document.querySelector("#adminJobTitle").value.trim();
+  const category = document.querySelector("#adminJobCategory").value.trim();
+  const description = document.querySelector("#adminJobDescription").value.trim();
+  const budget = Number(document.querySelector("#adminJobBudget").value);
+  const tier = document.querySelector("#adminJobTier").value;
+  const deadline = document.querySelector("#adminJobDeadline").value.trim() || "2 days";
+  const instructions = document.querySelector("#adminJobInstructions").value.trim();
+
+  if (!title || !category || !Number.isFinite(budget) || budget <= 0) {
+    notify("Enter a valid title, category, and budget.");
+    return;
+  }
+
+  if (jobs.some(j => j.title.toLowerCase() === title.toLowerCase())) {
+    notify("A task with that title already exists.");
+    return;
+  }
+
+  const submitButton = form.querySelector('button[type="submit"]');
+  const originalText = submitButton?.textContent || "Add Task";
+
+  try {
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Saving...";
+    }
+
+    const c = await ssGetSessionClient();
+    const { data: authData, error: authError } = await c.auth.getUser();
+
+    if (authError) throw authError;
+    if (!authData?.user) throw new Error("Please sign in again.");
+
+    const { data: savedTask, error } = await c
+      .from("tasks")
+      .insert({
+        title,
+        description: description + (instructions ? "\n\nInstructions: " + instructions : ""),
+        category,
+        price_usd: budget,
+        required_tier: tier || "free",
+        status: "published",
+        created_by: authData.user.id
+      })
+      .select("id,title,description,category,price_usd,required_tier,status")
+      .single();
+
+    if (error) throw error;
+
+    const newJob = {
+      id: savedTask.id,
+      title: savedTask.title,
+      cat: savedTask.category || category,
+      desc: savedTask.description || description,
+      budget: "$" + Number(savedTask.price_usd).toFixed(2),
+      accessTier: savedTask.required_tier || "free",
+      deadline,
+      instructions,
+      requirements: [
+        "Follow the task instructions.",
+        "Check the finished work for accuracy.",
+        "Submit the required deliverable before the deadline."
+      ]
+    };
+
+    jobs.push(newJob);
+    saveManagedJobs();
+    form.reset();
+
+    render();
+    renderAdmin();
+
+    if (typeof updateDash === "function") await updateDash();
+    if (typeof refreshAdminDashboard === "function") await refreshAdminDashboard();
+
+    notify("Task saved to Supabase successfully.");
+  } catch (err) {
+    console.error("Add task failed:", err);
+    notify("Task was not saved: " + (err.message || "Check Supabase permissions."));
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  }
+};
+```
+
 document.querySelector("#adminCourseForm").onsubmit=e=>{e.preventDefault();const title=document.querySelector("#adminCourseTitle").value.trim();const lessonTitle=document.querySelector("#adminLessonTitle").value.trim();const lessonContent=document.querySelector("#adminLessonContent").value.trim();let course=courses.find(c=>c.title.toLowerCase()===title.toLowerCase());if(course){course.lessons.push([lessonTitle,lessonContent])}else{courses.push({title,category:document.querySelector("#adminCourseCategory").value.trim(),icon:document.querySelector("#adminCourseIcon").value.trim()||"📘",summary:document.querySelector("#adminCourseSummary").value.trim(),lessons:[[lessonTitle,lessonContent]]})}saveManagedCourses();e.target.reset();document.querySelector("#adminCourseIcon").value="📘";render();renderAdmin();notify("Academy learning material saved in this browser.")};
 document.querySelector("#adminSupportForm").onsubmit=e=>{e.preventDefault();const email=document.querySelector("#adminSupportEmail").value.trim();writeLocal("skillspaceSupportEmail",email);syncUI();notify(email?"Support email saved.":"Support email cleared.")};
 document.querySelector("#supportForm").onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');if(btn.disabled)return;const original=btn.textContent;btn.disabled=true;btn.textContent="Sending…";try{const c=await ssGetSessionClient();const {data:authData}=await c.auth.getUser();const request={name:document.querySelector("#supportName").value.trim(),email:document.querySelector("#supportEmail").value.trim(),topic:document.querySelector("#supportTopic").value,message:document.querySelector("#supportMessage").value.trim(),status:"new"};if(authData?.user)request.user_id=authData.user.id;const {error}=await c.from("support_messages").insert(request);if(error)throw error;e.target.reset();btn.textContent="✓ Message sent";go("home");setTimeout(()=>{btn.textContent=original;btn.disabled=false;},2500);}catch(err){console.error("Support message failed:",err);btn.textContent=original;btn.disabled=false;notify("Your message could not be sent. Please try again.");}};
