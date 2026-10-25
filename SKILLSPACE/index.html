@@ -1385,30 +1385,51 @@ document.querySelectorAll('#p-admin .admin-nav-link[href^="#admin-"]').forEach(a
 window.addEventListener('focus',()=>{if(document.getElementById('p-dashboard')?.classList.contains('active')&&user())updateDash();});setInterval(()=>{if(document.visibilityState==='visible'&&document.getElementById('p-payment')?.classList.contains('active')&&user())loadMemberPaymentHistory();},15000);window.addEventListener('focus',()=>{if(document.getElementById('p-payment')?.classList.contains('active')&&user())loadMemberPaymentHistory()});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&document.getElementById('p-dashboard')?.classList.contains('active')&&user())updateDash();});setInterval(()=>{if(document.visibilityState==='visible'&&document.getElementById('p-dashboard')?.classList.contains('active')&&user())updateDash();},15000);
 window.addEventListener('resize',()=>{if(document.getElementById('p-admin')?.classList.contains('active'))refreshAdminDashboard()});setInterval(()=>{if(document.visibilityState==='visible'&&document.getElementById('p-admin')?.classList.contains('active')){refreshAdminDashboard();refreshAdminRecords();refreshAdminSubmissions();refreshAdminClientActivity();}},15000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&document.getElementById('p-admin')?.classList.contains('active')){refreshAdminDashboard();refreshAdminPayments();refreshAdminSubmissions();refreshAdminClientActivity();}});document.addEventListener('click',e=>{if(e.target.closest('[data-go="admin"]'))setTimeout(()=>{refreshAdminDashboard();refreshAdminPayments();refreshAdminRecords();refreshAdminSubmissions();refreshAdminClientActivity();startAdminRealtime()},250)});window.addEventListener('focus',()=>{if(document.getElementById('p-admin')?.classList.contains('active')){refreshAdminDashboard();refreshAdminSubmissions();refreshAdminClientActivity()}});
 
-</script><!-- SKILLSPACE Supabase connection -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-  const SUPABASE_URL = "https://zkxxmuujhlvifhlzntoo.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ogsc7DpbRFwp6lubR8rnOg_VkxdC8xv";
-
-  const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
-  );
-</script><!-- SKILLSPACE Supabase connection -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+</script><!-- SKILLSPACE Supabase connection: load once, with CDN fallback -->
 <script>
   window.SUPABASE_URL = "https://zkxxmuujhlvifhlzntoo.supabase.co";
-
-  window.SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_ogsc7DpbRFwp6lubR8rnOg_VkxdC8xv";
-
-  window.supabaseClient = window.supabase.createClient(
-    window.SUPABASE_URL,
-    window.SUPABASE_PUBLISHABLE_KEY
-  );
+  window.SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ogsc7DpbRFwp6lubR8rnOg_VkxdC8xv";
+  window.supabaseClient = window.supabaseClient || null;
+  window.skillspaceSupabaseReady = (async function initializeSkillspaceSupabase() {
+    if (window.supabaseClient) return window.supabaseClient;
+    const sources = [
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+      "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"
+    ];
+    let lastError = null;
+    for (const src of sources) {
+      try {
+        if (!window.supabase || typeof window.supabase.createClient !== "function") {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("Could not load Supabase library from " + src));
+            document.head.appendChild(script);
+          });
+        }
+        if (!window.supabase || typeof window.supabase.createClient !== "function") {
+          throw new Error("Supabase library loaded without createClient().");
+        }
+        window.supabaseClient = window.supabase.createClient(
+          window.SUPABASE_URL,
+          window.SUPABASE_PUBLISHABLE_KEY
+        );
+        window.dispatchEvent(new Event("skillspace:supabase-ready"));
+        console.info("SkillSpace Supabase client initialized.");
+        return window.supabaseClient;
+      } catch (err) {
+        lastError = err;
+        console.error("Supabase initialization attempt failed:", err);
+        window.supabase = undefined;
+      }
+    }
+    const msg = "Supabase could not initialize. Check the network/CDN connection and reload.";
+    console.error(msg, lastError);
+    document.querySelectorAll("#adminPaymentRefreshStatus,#adminManualPaymentStatus").forEach(el => { el.textContent = msg; });
+    throw lastError || new Error(msg);
+  })();
 </script>
 <script>
 // Password-reset confirmation runs after the Supabase client has been initialized.
@@ -1443,4 +1464,3 @@ window.addEventListener('resize',()=>{if(document.getElementById('p-admin')?.cla
   });
 })();
 </script></body></html>
- 
