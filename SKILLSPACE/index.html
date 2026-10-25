@@ -1261,7 +1261,6 @@ document.querySelector("#submissionForm").onsubmit=async e=>{
  }catch(err){console.error('Task submission notification failed:',err);const raw=String(err?.message||'');let message=raw||'Your notification could not be saved. Please try again.';if(/row-level security|permission denied|not allowed|403/i.test(message))message='Supabase blocked the notification because of database permissions. Ask the administrator to apply the metadata-only task-submission migration.';else if(/column .*task_title|schema cache/i.test(message))message='The database needs the metadata-only task-submission migration before this version can save notifications.';showSubmissionMessage('Submission failed: '+message+' Your task has not been marked as submitted.');
  }finally{if(submitBtn.textContent!=='✓ Submitted — awaiting review'){submitBtn.textContent=originalText;submitBtn.disabled=false;}}
 };
-```javascript
 document.querySelector("#adminJobForm").onsubmit = async e => {
   e.preventDefault();
 
@@ -1357,7 +1356,6 @@ document.querySelector("#adminJobForm").onsubmit = async e => {
     }
   }
 };
-```
 
 document.querySelector("#adminCourseForm").onsubmit=e=>{e.preventDefault();const title=document.querySelector("#adminCourseTitle").value.trim();const lessonTitle=document.querySelector("#adminLessonTitle").value.trim();const lessonContent=document.querySelector("#adminLessonContent").value.trim();let course=courses.find(c=>c.title.toLowerCase()===title.toLowerCase());if(course){course.lessons.push([lessonTitle,lessonContent])}else{courses.push({title,category:document.querySelector("#adminCourseCategory").value.trim(),icon:document.querySelector("#adminCourseIcon").value.trim()||"📘",summary:document.querySelector("#adminCourseSummary").value.trim(),lessons:[[lessonTitle,lessonContent]]})}saveManagedCourses();e.target.reset();document.querySelector("#adminCourseIcon").value="📘";render();renderAdmin();notify("Academy learning material saved in this browser.")};
 document.querySelector("#adminSupportForm").onsubmit=e=>{e.preventDefault();const email=document.querySelector("#adminSupportEmail").value.trim();writeLocal("skillspaceSupportEmail",email);syncUI();notify(email?"Support email saved.":"Support email cleared.")};
