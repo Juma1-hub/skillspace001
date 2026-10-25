@@ -519,7 +519,7 @@ async function refreshAdminPayments(){
   const c=await ssGetSessionClient();
   const [payRes,profileRes]=await Promise.all([
    c.from('payments').select('id,user_id,plan_id,amount_usd,amount_kes,currency,payment_method,provider_reference,provider_transaction_id,status,verified_at,created_at,phone').order('created_at',{ascending:false}).limit(100),
-   c.from('profiles').select('id,full_name,email,membership_tier')
+   c.from('profiles').select('id,full_name,membership_tier')
   ]);
   if(payRes.error)throw payRes.error;
   if(profileRes.error)throw profileRes.error;
@@ -564,7 +564,7 @@ async function checkMemberPayment(paymentId,button){
   if(status)status.textContent=message;
   await loadMemberPaymentHistory();
   if(data.verified){
-   try{const {data:profile,error:profileError}=await c.from('profiles').select('membership_tier,full_name,email').eq('id',authData.user.id).maybeSingle();if(!profileError&&profile){const current=user()||{};const updated={...current,plan:profile.membership_tier||current.plan,name:profile.full_name||current.name,email:profile.email||current.email};writeLocal('skillspaceDemoUser',updated);}}catch(e){console.warn('Membership display refresh deferred:',e)}
+   try{const {data:profile,error:profileError}=await c.from('profiles').select('membership_tier,full_name').eq('id',authData.user.id).maybeSingle();if(!profileError&&profile){const current=user()||{};const updated={...current,plan:profile.membership_tier||current.plan,name:profile.full_name||current.name,email:profile.email||current.email};writeLocal('skillspaceDemoUser',updated);}}catch(e){console.warn('Membership display refresh deferred:',e)}
    await updateDash();syncUI();
   }
  }catch(err){console.error('Payment status check failed:',err);const msg=err?.message||'Could not check payment status. Please try again.';if(status)status.textContent=msg;if(paymentStatus){paymentStatus.style.display='block';paymentStatus.style.color='#991b1b';paymentStatus.textContent=msg;}}
