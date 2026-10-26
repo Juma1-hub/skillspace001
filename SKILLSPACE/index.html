@@ -342,7 +342,7 @@ body{font-family:'DM Sans',system-ui,-apple-system,sans-serif;letter-spacing:.00
         <div class="admin-notice"><span class="admin-notice-icon">i</span><div><b>Administrative data and security</b><p>Some actions in this version are stored in this browser only. Real cross-device records, payment verification, file storage and approval permissions must be enforced by the connected backend. Never approve a payment without checking the actual transaction.</p></div></div>
 
         <section class="admin-section" id="admin-tasks"><div class="admin-section-head"><div><span class="admin-section-kicker">OPPORTUNITIES</span><h2><span class="admin-heading-icon">✦</span> Task management</h2><p>Create a task listing and manage existing tasks.</p></div><span class="admin-section-chip">Listings</span></div>
-          <form id="adminJobForm"><div class="admin-form-grid"><div class="field"><label for="adminJobTitle">Task title</label><input id="adminJobTitle" required maxlength="120" placeholder="e.g. Proofread a short article"></div><div class="field"><label for="adminJobCategory">Category</label><input id="adminJobCategory" required maxlength="60" placeholder="e.g. Writing"></div><div class="field"><label for="adminJobBudget">Budget (USD)</label><input id="adminJobBudget" type="number" min="0.01" max="10000" step="0.01" required placeholder="5.00"></div><div class="field"><label for="adminJobTier">Minimum plan</label><select id="adminJobTier"><option value="free">Free</option><option value="basic">Basic</option><option value="standard">Standard</option><option value="premium">Premium</option></select></div><div class="field"><label for="adminJobDeadline">Deadline</label><input id="adminJobDeadline" value="2 days" maxlength="40"></div><div class="field"><label for="adminJobDescription">Short description</label><input id="adminJobDescription" required maxlength="300" placeholder="A short summary for members"></div><div class="field admin-field-wide"><label for="adminJobInstructions">Instructions</label><textarea id="adminJobInstructions" required maxlength="3000" placeholder="Explain the expected deliverable and requirements"></textarea></div></div><div class="admin-form-footer"><span class="tiny muted">Check the budget, access level and instructions before publishing.</span><button class="btn primary" type="submit">＋ Add task</button></div></form><div class="admin-generated-list" id="adminJobList"></div>
+          <form id="adminJobForm"><div class="admin-form-grid"><div class="field"><label for="adminJobTitle">Task title</label><input id="adminJobTitle" required maxlength="120" placeholder="e.g. Proofread a short article"></div><div class="field"><label for="adminJobCategory">Category</label><input id="adminJobCategory" required maxlength="60" placeholder="e.g. Writing"></div><div class="field"><label for="adminJobBudget">Budget (USD)</label><input id="adminJobBudget" type="number" min="0.01" max="10000" step="0.01" required placeholder="5.00"></div><div class="field"><label for="adminJobTier">Minimum plan</label><select id="adminJobTier"><option>Free</option><option>Basic</option><option>Standard</option><option>Premium</option></select></div><div class="field"><label for="adminJobDeadline">Deadline</label><input id="adminJobDeadline" value="2 days" maxlength="40"></div><div class="field"><label for="adminJobDescription">Short description</label><input id="adminJobDescription" required maxlength="300" placeholder="A short summary for members"></div><div class="field admin-field-wide"><label for="adminJobInstructions">Instructions</label><textarea id="adminJobInstructions" required maxlength="3000" placeholder="Explain the expected deliverable and requirements"></textarea></div></div><div class="admin-form-footer"><span class="tiny muted">Check the budget, access level and instructions before publishing.</span><button class="btn primary" type="submit">＋ Add task</button></div></form><div class="admin-generated-list" id="adminJobList"></div>
         </section>
 
         <section class="admin-section" id="admin-academy"><div class="admin-section-head"><div><span class="admin-section-kicker">LEARNING LIBRARY</span><h2><span class="admin-heading-icon">▤</span> Academy content</h2><p>Add a course, lesson or learning material.</p></div><span class="admin-section-chip">Courses</span></div><p class="muted tiny admin-helper">Enter an existing course title to add another lesson to it, or a new title to create a new course category.</p>
@@ -438,23 +438,67 @@ function saveManagedJobs(){writeLocal("skillspaceManagedJobs",jobs)}
 function saveManagedCourses(){writeLocal("skillspaceManagedCourses",courses)}
 function generateReferralCode(name,email){const base=String((name||email||"SKILL").split(/[\s@._-]+/)[0]||"SKILL").replace(/[^A-Za-z0-9]/g,"").toUpperCase().slice(0,7)||"SKILL";const clients=readLocal("skillspaceDemoClients",[]);let code="";do{code=base+""+Math.random().toString(36).slice(2,7).toUpperCase()}while(clients.some(c=>(c.referralCode||"").toUpperCase()===code));return code}
 function recordClient(u){if(!u||!u.email)return;let clients=readLocal("skillspaceDemoClients",[]);const email=u.email.toLowerCase();const old=clients.find(x=>x.email===email)||{};if(!u.referralCode)u.referralCode=old.referralCode||generateReferralCode(u.name,email);const clean={name:u.name||"",email,country:u.country||"",skill:u.skill||"",plan:u.plan||"Free",profileCompletion:profileCompletion(u),referralCode:u.referralCode,referredByCode:u.referredByCode||old.referredByCode||"",referredByEmail:u.referredByEmail||old.referredByEmail||"",referredByName:u.referredByName||old.referredByName||"",updatedAt:new Date().toISOString()};const i=clients.findIndex(x=>x.email===email);if(i>=0)clients[i]={...clients[i],...clean};else clients.push(clean);writeLocal("skillspaceDemoClients",clients);localStorage.setItem("skillspaceDemoUser",JSON.stringify(u))}
-function referralMetrics(u=user()){if(!u)return {clients:[],commissions:[],total:0};const clients=readLocal("skillspaceDemoClients",[]).filter(c=>c.email!==(u.email||"").toLowerCase()&&((c.referredByEmail||"").toLowerCase()===(u.email||"").toLowerCase()||(c.referredByCode||"").toUpperCase()===(u.referralCode||"").toUpperCase()));const commissions=readLocal("skillspaceReferralCommissions",[]).filter(c=>(c.referrerEmail||"").toLowerCase()===(u.email||"").toLowerCase());return {clients,commissions,total:commissions.reduce((sum,c)=>sum+(Number(c.amountUSD)||0),0)}}
-async function getRealReferralCount(){try{const client=window.supabaseClient;if(!client)return null;const{data:{session},error:sessionError}=await client.auth.getSession();if(sessionError||!session)return null;const{data,error}=await client.rpc('get_my_referral_count');if(error){console.error('Referral count error:',error);return null;}return Number(data)||0;}catch(error){console.error('Referral count error:',error);return null;}}
+function referralMetrics(u=user()){if(!u)return {clients:[],commissions:[],total:0};const clients=readLocal("skillspaceDemoClients",[]).filter(c=>c.email!==(u.email||"").toLowerCase()&&((c.referredByEmail||"").toLowerCase()===(u.email||"").toLowerCase()||(c.referredByCode||"").toUpperCase()===(u.referralCode||"").toUpperCase()));const commissions=readLocal("skillspaceReferralCommissions",[]).filter(c=>(c.referrerEmail||"").toLowerCase()===(u.email||"").toLowerCase());return {clients,commissions,total:commissions.filter(c=>String(c.status||"pending").toLowerCase()!=="cancelled").reduce((sum,c)=>sum+(Number(c.amountUSD)||0),0)}}
+async function getRealReferralData(){
+  const client=await ssGetSessionClient();
+  const {data:{user:authUser},error:authError}=await client.auth.getUser();
+  if(authError)throw authError;
+  if(!authUser?.id)throw new Error("Please sign in again to view your referrals.");
+  const [{data:referrals,error:referralsError},{data:commissions,error:commissionsError}]=await Promise.all([
+    client.from("referrals").select("id,referrer_id,referred_user_id,referral_code,created_at").eq("referrer_id",authUser.id).order("created_at",{ascending:false}),
+    client.from("referral_commissions").select("id,referrer_id,referred_user_id,payment_reference,membership_amount_usd,commission_rate,commission_amount_usd,status,created_at").eq("referrer_id",authUser.id).order("created_at",{ascending:false})
+  ]);
+  if(referralsError)throw referralsError;
+  if(commissionsError)throw commissionsError;
+  const referredIds=[...new Set((referrals||[]).map(r=>r.referred_user_id).filter(Boolean))];
+  const profilesById={};
+  if(referredIds.length){
+    try{
+      const {data:profiles,error:profilesError}=await client.from("profiles").select("id,full_name,membership_tier").in("id",referredIds);
+      if(!profilesError)(profiles||[]).forEach(p=>profilesById[p.id]=p);
+    }catch(profileError){console.warn("Referral profile details unavailable; showing safe fallback names.",profileError);}
+  }
+  const clients=(referrals||[]).map(r=>{
+    const profile=profilesById[r.referred_user_id]||{};
+    return {id:r.referred_user_id,name:profile.full_name||"Referred member",email:"",plan:profile.membership_tier||"Membership",createdAt:r.created_at};
+  });
+  const commissionRows=(commissions||[]).map(c=>{
+    const profile=profilesById[c.referred_user_id]||{};
+    return {id:c.id,clientName:profile.full_name||"Referred member",clientEmail:"",plan:"Membership",amountUSD:Number(c.commission_amount_usd)||0,membershipAmountUSD:Number(c.membership_amount_usd)||0,rate:Number(c.commission_rate)||25,status:c.status||"pending",createdAt:c.created_at,paymentReference:c.payment_reference};
+  });
+  const total=commissionRows.filter(c=>String(c.status).toLowerCase()!=="cancelled").reduce((sum,c)=>sum+c.amountUSD,0);
+  return {clients,commissions:commissionRows,total};
+}
+async function getRealReferralCount(){try{const data=await getRealReferralData();return data.clients.length;}catch(error){console.error("Referral count error:",error);return null;}}
 
- function refreshReferralUI(){const u=user();if(!u)return;recordClient(u);const m=referralMetrics(u);const code=u.referralCode||"SKILL-XXXXXX";const codeEl=document.querySelector("#referralCodeDisplay");if(codeEl)codeEl.textContent=code;const link=document.querySelector("#refLink");if(link){const base=location.origin+location.pathname;link.value=base+"?ref="+encodeURIComponent(code)+"#signup"}const count=document.querySelector("#referralClientCount");if(count){count.textContent="Loading...";getRealReferralCount().then(realCount=>{if(realCount!==null)count.textContent=realCount;else count.textContent=m.clients.length;});}
-const total=document.querySelector("#referralTotalEarnings");if(total)total.textContent="$"+m.total.toFixed(2);const kes=document.querySelector("#referralTotalKes");if(kes)kes.textContent="Approx. KSh "+(m.total*USD_KES_RATE).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2});const list=document.querySelector("#myReferralClients");if(list)list.innerHTML=m.clients.length?m.clients.map(c=>`<div class="referral-client-item"><div><b>${escapeHtml(c.name||"Client")}</b><div class="tiny muted">${escapeHtml(c.email)}</div></div><span class="tag">${escapeHtml(c.plan||"Free")} plan</span></div>`).join(""):`<p class="muted tiny">No referred clients yet. Share your referral code to get started.</p>`;const hist=document.querySelector("#myReferralCommissions");if(hist)hist.innerHTML=m.commissions.length?m.commissions.slice().reverse().map(c=>`<div class="referral-client-item"><div><b>${escapeHtml(c.clientName||c.clientEmail||"Referred client")}</b><div class="tiny muted">${new Date(c.createdAt||Date.now()).toLocaleDateString()} · ${escapeHtml(c.plan||"Membership")}</div></div><strong>$${Number(c.amountUSD||0).toFixed(2)} <span class="kes">(KSh ${(Number(c.amountUSD||0)*USD_KES_RATE).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})})</span></strong></div>`).join(""):`<p class="muted tiny">Referral commissions appear here after membership payments are verified.</p>`;const dashCount=document.querySelector("#dashReferralCount");if(dashCount){dashCount.textContent="Loading...";getRealReferralCount().then(count=>{if(count!==null)dashCount.textContent=count;else dashCount.textContent=m.clients.length;});}
-const profileCount=document.querySelector("#profileDashReferrals");
-if(profileCount){
-  profileCount.textContent="Loading...";
-  getRealReferralCount().then(realCount=>{
-    if(realCount!==null){
-      profileCount.textContent=realCount;
-    }else{
-      profileCount.textContent=m.clients.length;
-    }
+function refreshReferralUI(){
+  const u=user();if(!u)return;recordClient(u);
+  const fallback=referralMetrics(u);
+  const code=u.referralCode||"SKILL-XXXXXX";
+  const codeEl=document.querySelector("#referralCodeDisplay");if(codeEl)codeEl.textContent=code;
+  const link=document.querySelector("#refLink");if(link){const base=location.origin+location.pathname;link.value=base+"?ref="+encodeURIComponent(code)+"#signup";}
+  const render=(m,isLive)=>{
+    const count=document.querySelector("#referralClientCount");if(count)count.textContent=String(m.clients.length);
+    const total=document.querySelector("#referralTotalEarnings");if(total)total.textContent="$"+m.total.toFixed(2);
+    const kes=document.querySelector("#referralTotalKes");if(kes)kes.textContent="Approx. KSh "+(m.total*USD_KES_RATE).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const list=document.querySelector("#myReferralClients");
+    if(list)list.innerHTML=m.clients.length?m.clients.map(c=>`<div class="referral-client-item"><div><b>${escapeHtml(c.name||"Referred member")}</b><div class="tiny muted">${c.email?escapeHtml(c.email):"Referred on "+new Date(c.createdAt||Date.now()).toLocaleDateString()}</div></div><span class="tag">${escapeHtml(c.plan||"Membership")}</span></div>`).join(""):`<p class="muted tiny">${isLive?"No referred clients are recorded for this account yet. Share your referral code to get started.":"Live referral data is unavailable. Please refresh after signing in."}</p>`;
+    const hist=document.querySelector("#myReferralCommissions");
+    if(hist)hist.innerHTML=m.commissions.length?m.commissions.map(c=>`<div class="referral-client-item"><div><b>${escapeHtml(c.clientName||"Referred member")}</b><div class="tiny muted">${new Date(c.createdAt||Date.now()).toLocaleDateString()} · ${escapeHtml(c.status||"pending")} · ${escapeHtml(c.plan||"Membership")}</div></div><strong>$${Number(c.amountUSD||0).toFixed(2)} <span class="kes">(KSh ${(Number(c.amountUSD||0)*USD_KES_RATE).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})})</span></strong></div>`).join(""):`<p class="muted tiny">Referral commissions appear here after membership payments are verified.</p>`;
+    const dashCount=document.querySelector("#dashReferralCount");if(dashCount)dashCount.textContent=String(m.clients.length);
+    const profileCount=document.querySelector("#profileDashReferrals");if(profileCount)profileCount.textContent=String(m.clients.length);
+    const dashEarn=document.querySelector("#dashReferralEarnings");if(dashEarn)dashEarn.innerHTML=moneyPair(m.total);
+    const profileEarn=document.querySelector("#profileDashEarnings");if(profileEarn)profileEarn.innerHTML=moneyPair(m.total);
+  };
+  render(fallback,false);
+  getRealReferralData().then(live=>render(live,true)).catch(error=>{
+    console.error("Could not load live referral data from Supabase:",error);
+    const list=document.querySelector("#myReferralClients");
+    if(list)list.innerHTML=`<p class="muted tiny">Unable to load referred clients from Supabase. Please refresh or sign in again.</p>`;
+    const hist=document.querySelector("#myReferralCommissions");
+    if(hist)hist.innerHTML=`<p class="muted tiny">Unable to load commission history from Supabase. Please refresh or sign in again.</p>`;
   });
 }
-const dashEarn=document.querySelector("#dashReferralEarnings");if(dashEarn)dashEarn.innerHTML=moneyPair(m.total);const profileEarn=document.querySelector("#profileDashEarnings");if(profileEarn)profileEarn.innerHTML=moneyPair(m.total)}
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
 
 function numericPrice(value){return Number(String(value??0).replace(/[^0-9.]/g,""))||0}
@@ -502,9 +546,7 @@ async function syncPublishedTaskCatalog(){
   for(const j of jobs){
    const title=String(j.title||'').trim();if(!title)continue;
    const budget=Number(String(j.budget??'0').replace(/[^0-9.]/g,''));
-   const tierValue=String(j.accessTier||'free').trim().toLowerCase();
-   const requiredTier=['free','basic','standard','premium'].includes(tierValue)?tierValue:'free';
-   const payload={title,description:String(j.instructions||j.desc||''),category:String(j.cat||'General'),price_usd:Number.isFinite(budget)?budget:0,required_tier:requiredTier,status:'published',created_by:actorId};
+   const payload={title,description:String(j.instructions||j.desc||''),category:String(j.cat||'General'),price_usd:Number.isFinite(budget)?budget:0,required_tier:String(j.accessTier||'Free'),status:'published',created_by:actorId};
    const {data:existing,error:findError}=await c.from('tasks').select('id,status').eq('title',title).limit(1);
    if(findError)throw findError;
    if(existing&&existing.length){const row=existing[0];if(String(row.status||'').toLowerCase()!=='published'){const {error}=await c.from('tasks').update({description:payload.description,category:payload.category,price_usd:payload.price_usd,required_tier:payload.required_tier,status:'published'}).eq('id',row.id);if(error)throw error;}}
@@ -1276,10 +1318,7 @@ document.querySelector("#adminJobForm").onsubmit = async e => {
   const category = document.querySelector("#adminJobCategory").value.trim();
   const description = document.querySelector("#adminJobDescription").value.trim();
   const budget = Number(document.querySelector("#adminJobBudget").value);
-  const tierInput = document.querySelector("#adminJobTier").value;
-  const allowedTiers = ["free", "basic", "standard", "premium"];
-  const tierValue = String(tierInput || "free").trim().toLowerCase();
-  const tier = allowedTiers.includes(tierValue) ? tierValue : "free";
+  const tier = document.querySelector("#adminJobTier").value;
   const deadline = document.querySelector("#adminJobDeadline").value.trim() || "2 days";
   const instructions = document.querySelector("#adminJobInstructions").value.trim();
 
